@@ -1,2 +1,2 @@
 rootProject.name = "ECUFlasher-Pro"
-include(":App")
+include(":app")
