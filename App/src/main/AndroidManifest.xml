@@ -4,7 +4,7 @@
     <application
         android:label="ECUFlasher Pro"
         android:allowBackup="true"
-        android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
+        android:theme="@style/Theme.AppCompat.Light.NoActionBar">
 
         <activity
             android:name=".MainActivity"
