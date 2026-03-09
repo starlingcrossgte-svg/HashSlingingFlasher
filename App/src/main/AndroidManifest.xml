@@ -4,13 +4,18 @@
     <application
         android:allowBackup="true"
         android:label="ECUFlasher Pro"
-        android:supportsRtl="true">
+        android:supportsRtl="true"
+        android:theme="@style/Theme.AppCompat.Light.NoActionBar">
 
-        <activity android:name="com.ecuflasher.MainActivity" android:exported="true">
+        <activity
+            android:name="com.ecuflasher.MainActivity"
+            android:exported="true">
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
         </activity>
 
     </application>
