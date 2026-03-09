@@ -1,22 +1,22 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.ecuflasher">
 
+    <!-- Allow app to detect USB devices (Tactrix, CAN adapters, etc.) -->
+    <uses-feature android:name="android.hardware.usb.host" />
+
     <application
-        android:label="ECUFlasher Pro"
         android:allowBackup="true"
-        android:theme="@android:style/Theme.Material.Light">
+        android:label="ECUFlasher Pro"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.AppCompat.DayNight.DarkActionBar">
 
         <activity
             android:name=".MainActivity"
-            android:exported="true"
-            android:launchMode="singleTask">
-
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-
         </activity>
 
     </application>
