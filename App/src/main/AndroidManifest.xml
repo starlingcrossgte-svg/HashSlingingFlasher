@@ -2,14 +2,14 @@
     package="com.ecuflasher">
 
     <application
-        android:allowBackup="true"
         android:label="ECUFlasher Pro"
-        android:supportsRtl="true"
-        android:theme="@style/Theme.AppCompat.Light.NoActionBar">
+        android:allowBackup="true"
+        android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
 
         <activity
-            android:name="com.ecuflasher.MainActivity"
-            android:exported="true">
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTask">
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
