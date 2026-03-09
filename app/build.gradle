@@ -15,6 +15,10 @@ android {
         versionName "1.0"
     }
 
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+
     buildTypes {
         release {
             minifyEnabled false
