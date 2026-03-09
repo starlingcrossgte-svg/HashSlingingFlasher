@@ -1,6 +1,5 @@
 plugins {
     id 'com.android.application'
-    id 'org.jetbrains.kotlin.android'
 }
 
 android {
@@ -9,7 +8,7 @@ android {
 
     defaultConfig {
         applicationId "com.ecuflasher"
-        minSdk 21
+        minSdk 24
         targetSdk 34
         versionCode 1
         versionName "1.0"
@@ -19,17 +18,11 @@ android {
         release {
             minifyEnabled false
         }
+        debug {
+            debuggable true
+        }
     }
-compileOptions {
-    sourceCompatibility JavaVersion.VERSION_17
-    targetCompatibility JavaVersion.VERSION_17
-}
-
-kotlinOptions {
-    jvmTarget = "17"
-}
 }
 
 dependencies {
-    implementation 'androidx.appcompat:appcompat:1.6.1'
 }
