@@ -4,7 +4,7 @@
     <application
         android:label="ECUFlasher Pro"
         android:allowBackup="true"
-        android:theme="@style/Theme.AppCompat.Light.NoActionBar"
+        android:theme="@android:style/Theme.Material.Light">
 
         <activity
             android:name=".MainActivity"
@@ -13,6 +13,7 @@
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
