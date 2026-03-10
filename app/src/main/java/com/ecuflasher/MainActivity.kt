@@ -17,6 +17,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         statusText = TextView(this)
+        statusText.textSize = 20f
         setContentView(statusText)
 
         val usbManager = getSystemService(Context.USB_SERVICE) as UsbManager
@@ -29,11 +30,8 @@ class MainActivity : AppCompatActivity() {
 
         val device: UsbDevice = deviceList.values.first()
 
-        val vendorId = device.vendorId
-        val productId = device.productId
-
         statusText.text =
-            "USB device connected\nVendor ID: $vendorId\nProduct ID: $productId"
+            "USB device connected\nVendor ID: ${device.vendorId}\nProduct ID: ${device.productId}"
 
         if (!usbManager.hasPermission(device)) {
             val permissionIntent = PendingIntent.getBroadcast(
@@ -42,7 +40,6 @@ class MainActivity : AppCompatActivity() {
                 Intent("com.ecuflasher.USB_PERMISSION"),
                 PendingIntent.FLAG_IMMUTABLE
             )
-
             usbManager.requestPermission(device, permissionIntent)
         }
     }
