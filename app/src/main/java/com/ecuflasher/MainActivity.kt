@@ -1,10 +1,6 @@
 package com.ecuflasher
 
 import android.app.Activity
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
 import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
 import android.os.Bundle
@@ -21,42 +17,21 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var usbStatusText: TextView
 
-    private val usbReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent?) {
-            when (intent?.action) {
-                UsbManager.ACTION_USB_DEVICE_ATTACHED,
-                UsbManager.ACTION_USB_DEVICE_DETACHED -> {
-                    checkUsbConnection()
-                }
-            }
-        }
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         usbStatusText = findViewById(R.id.usbStatusText)
 
-        // Register receiver for USB plug/unplug
-        val filter = IntentFilter()
-        filter.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED)
-        filter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED)
-        registerReceiver(usbReceiver, filter)
-
+        // Check USB when the activity starts
         checkUsbConnection()
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        unregisterReceiver(usbReceiver)
-    }
-
     private fun checkUsbConnection() {
-        val usbManager = getSystemService(Context.USB_SERVICE) as UsbManager
-        val connectedDevices: HashMap<String, UsbDevice> = usbManager.deviceList
+        val usbManager = getSystemService(Activity.USB_SERVICE) as UsbManager
+        val deviceList: HashMap<String, UsbDevice> = usbManager.deviceList
 
-        val status = if (connectedDevices.isNotEmpty()) {
+        val status = if (deviceList.isNotEmpty()) {
             UsbStatus.CONNECTED
         } else {
             UsbStatus.DISCONNECTED
@@ -66,25 +41,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateUsbStatus(status: UsbStatus) {
-        when (status) {
-            UsbStatus.CONNECTED -> handleConnected()
-            UsbStatus.DISCONNECTED -> handleDisconnected()
-            else -> handleUnknown()
+        // Inline UI update without refreshing the activity
+        usbStatusText.text = when (status) {
+            UsbStatus.CONNECTED -> "USB Device Connected"
+            UsbStatus.DISCONNECTED -> "No USB Device Connected"
+            UsbStatus.UNKNOWN -> "USB Status Unknown"
         }
-    }
-
-    private fun handleConnected() {
-        usbStatusText.text = "USB Device Connected"
-        // Add additional logic for connected device
-    }
-
-    private fun handleDisconnected() {
-        usbStatusText.text = "No USB Device Connected"
-        // Add additional logic for disconnected device
-    }
-
-    private fun handleUnknown() {
-        usbStatusText.text = "USB Status Unknown"
-        // Optional fallback logic
     }
 }
