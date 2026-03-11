@@ -1,16 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/mainLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:gravity="center"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="@android:color/background_light">
 
     <TextView
-        android:id="@+id/statusText"
+        android:id="@+id/usbStatusText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="ECUFlasher Ready"
-        android:textSize="20sp"/>
+        android:text="USB Status: Not Connected"
+        android:textSize="18sp"
+        android:textColor="@android:color/black"
+        android:layout_marginBottom="20dp"/>
+
+    <Button
+        android:id="@+id/refreshUsbButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Refresh USB Status" />
 
 </LinearLayout>
