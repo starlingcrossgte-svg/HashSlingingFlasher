@@ -1,46 +1,67 @@
 package com.ecuflasher
 
-import android.app.Activity
+import android.app.PendingIntent
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
 import android.os.Bundle
 import android.widget.TextView
-import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 
-class MainActivity : Activity() {
+class MainActivity : AppCompatActivity() {
 
-    private lateinit var usbManager: UsbManager
-    private lateinit var statusTextView: TextView
+    private lateinit var usbStatusText: TextView
+    private val ACTION_USB_PERMISSION = "com.ecuflasher.USB_PERMISSION"
+
+    private val usbReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            intent?.let {
+                when (it.action) {
+                    UsbManager.ACTION_USB_DEVICE_ATTACHED -> {
+                        val device: UsbDevice? = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE)
+                        device?.let { d ->
+                            usbStatusText.text = "USB Connected\nVendor ID: ${d.vendorId}\nProduct ID: ${d.productId}"
+                        }
+                    }
+                    UsbManager.ACTION_USB_DEVICE_DETACHED -> {
+                        usbStatusText.text = "USB Disconnected"
+                    }
+                    ACTION_USB_PERMISSION -> {
+                        val granted = it.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)
+                        usbStatusText.text = if (granted) "Permission Granted" else "Permission Denied"
+                    }
+                }
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        statusTextView = findViewById(R.id.statusTextView)
-        usbManager = getSystemService(Context.USB_SERVICE) as UsbManager
+        usbStatusText = findViewById(R.id.usbStatusText)
 
-        checkConnectedUsbDevices()
+        // Register USB attach/detach receiver
+        val filter = IntentFilter()
+        filter.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED)
+        filter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED)
+        filter.addAction(ACTION_USB_PERMISSION)
+        registerReceiver(usbReceiver, filter)
+
+        // Check if any USB device is already connected
+        val usbManager = getSystemService(Context.USB_SERVICE) as UsbManager
+        val deviceList = usbManager.deviceList
+        if (deviceList.isNotEmpty()) {
+            val device = deviceList.values.first()
+            usbStatusText.text = "USB Connected\nVendor ID: ${device.vendorId}\nProduct ID: ${device.productId}"
+        }
     }
 
-    private fun checkConnectedUsbDevices() {
-        val deviceList: HashMap<String, UsbDevice> = usbManager.deviceList
-        if (deviceList.isEmpty()) {
-            statusTextView.text = "No USB devices connected"
-            Toast.makeText(this, "No USB devices detected", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        for ((_, device) in deviceList) {
-            val vendorId = device.vendorId
-            val productId = device.productId
-            statusTextView.text = "USB device connected\nVendor ID: $vendorId\nProduct ID: $productId"
-            Toast.makeText(this, "USB device detected: Vendor $vendorId, Product $productId", Toast.LENGTH_LONG).show()
-
-            // Here you can add extra logic to identify your Tactrix device
-            if (vendorId == 0x1027 && productId == 0xCC01) { // Example IDs, adjust to your device
-                statusTextView.append("\nTactrix OpenPort detected!")
-            }
-        }
+    override fun onDestroy() {
+        super.onDestroy()
+        unregisterReceiver(usbReceiver)
     }
 }
