@@ -1,18 +1,54 @@
 package com.ecuflasher
 
-import androidx.appcompat.app.AppCompatActivity
+import android.app.Activity
+import android.hardware.usb.UsbDevice
+import android.hardware.usb.UsbManager
 import android.os.Bundle
 import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
+
+enum class UsbStatus {
+    CONNECTED,
+    DISCONNECTED,
+    UNKNOWN
+}
 
 class MainActivity : AppCompatActivity() {
 
+    private lateinit var usbStatusText: TextView
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
 
-        val text = TextView(this)
-        text.text = "ECUFlasher Pro"
-        text.textSize = 26f
+        usbStatusText = findViewById(R.id.usbStatusText)
 
-        setContentView(text)
+        // Initial USB check
+        checkUsbConnection()
+
+        // Register BroadcastReceiver for USB attach/detach
+        registerReceiver(usbReceiver, UsbReceiver.getIntentFilter())
+    }
+
+    private fun checkUsbConnection() {
+        val usbManager = getSystemService(Activity.USB_SERVICE) as UsbManager
+        val deviceList: HashMap<String, UsbDevice> = usbManager.deviceList
+
+        val status = if (deviceList.isNotEmpty()) {
+            UsbStatus.CONNECTED
+        } else {
+            UsbStatus.DISCONNECTED
+        }
+
+        updateUsbStatus(status)
+    }
+
+    private fun updateUsbStatus(status: UsbStatus) {
+        // Inline update without activity redraw
+        usbStatusText.text = when (status) {
+            UsbStatus.CONNECTED -> "USB Device Connected"
+            UsbStatus.DISCONNECTED -> "No USB Device Connected"
+            UsbStatus.UNKNOWN -> "USB Status Unknown"
+        }
     }
 }

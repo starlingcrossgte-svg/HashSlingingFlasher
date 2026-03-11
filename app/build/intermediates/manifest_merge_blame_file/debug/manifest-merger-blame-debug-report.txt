@@ -1,0 +1,95 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="com.ecuflasher"
+4    android:versionCode="1"
+5    android:versionName="1.0" >
+6
+7    <uses-sdk
+8        android:minSdkVersion="24"
+9        android:targetSdkVersion="34" />
+10
+11    <uses-feature android:name="android.hardware.usb.host" />
+11-->/data/data/com.termux/files/home/ECUFlasher-Pro/app/src/main/AndroidManifest.xml:3:5-62
+11-->/data/data/com.termux/files/home/ECUFlasher-Pro/app/src/main/AndroidManifest.xml:3:19-59
+12
+13    <permission
+13-->[androidx.core:core:1.9.0] /data/data/com.termux/files/home/.gradle/caches/transforms-3/5a317505199c188d7fc237202ba7e31f/transformed/core-1.9.0/AndroidManifest.xml:22:5-24:47
+14        android:name="com.ecuflasher.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+14-->[androidx.core:core:1.9.0] /data/data/com.termux/files/home/.gradle/caches/transforms-3/5a317505199c188d7fc237202ba7e31f/transformed/core-1.9.0/AndroidManifest.xml:23:9-81
+15        android:protectionLevel="signature" />
+15-->[androidx.core:core:1.9.0] /data/data/com.termux/files/home/.gradle/caches/transforms-3/5a317505199c188d7fc237202ba7e31f/transformed/core-1.9.0/AndroidManifest.xml:24:9-44
+16
+17    <uses-permission android:name="com.ecuflasher.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
+17-->[androidx.core:core:1.9.0] /data/data/com.termux/files/home/.gradle/caches/transforms-3/5a317505199c188d7fc237202ba7e31f/transformed/core-1.9.0/AndroidManifest.xml:26:5-97
+17-->[androidx.core:core:1.9.0] /data/data/com.termux/files/home/.gradle/caches/transforms-3/5a317505199c188d7fc237202ba7e31f/transformed/core-1.9.0/AndroidManifest.xml:26:22-94
+18
+19    <application
+19-->/data/data/com.termux/files/home/ECUFlasher-Pro/app/src/main/AndroidManifest.xml:5:5-25:19
+20        android:allowBackup="true"
+20-->/data/data/com.termux/files/home/ECUFlasher-Pro/app/src/main/AndroidManifest.xml:6:9-35
+21        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
+21-->[androidx.core:core:1.9.0] /data/data/com.termux/files/home/.gradle/caches/transforms-3/5a317505199c188d7fc237202ba7e31f/transformed/core-1.9.0/AndroidManifest.xml:28:18-86
+22        android:debuggable="true"
+23        android:extractNativeLibs="false"
+24        android:label="ECUFlasher"
+24-->/data/data/com.termux/files/home/ECUFlasher-Pro/app/src/main/AndroidManifest.xml:7:9-35
+25        android:supportsRtl="true"
+25-->/data/data/com.termux/files/home/ECUFlasher-Pro/app/src/main/AndroidManifest.xml:8:9-35
+26        android:theme="@style/Theme.AppCompat.Light.DarkActionBar" >
+26-->/data/data/com.termux/files/home/ECUFlasher-Pro/app/src/main/AndroidManifest.xml:9:9-67
+27        <activity
+27-->/data/data/com.termux/files/home/ECUFlasher-Pro/app/src/main/AndroidManifest.xml:11:1-23:20
+28            android:name="com.ecuflasher.MainActivity"
+28-->/data/data/com.termux/files/home/ECUFlasher-Pro/app/src/main/AndroidManifest.xml:11:11-39
+29            android:exported="true" >
+29-->/data/data/com.termux/files/home/ECUFlasher-Pro/app/src/main/AndroidManifest.xml:11:40-63
+30            <intent-filter>
+30-->/data/data/com.termux/files/home/ECUFlasher-Pro/app/src/main/AndroidManifest.xml:11:76-13:29
+31                <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
+31-->/data/data/com.termux/files/home/ECUFlasher-Pro/app/src/main/AndroidManifest.xml:12:17-90
+31-->/data/data/com.termux/files/home/ECUFlasher-Pro/app/src/main/AndroidManifest.xml:12:25-87
+32            </intent-filter>
+33
+34            <meta-data
+34-->/data/data/com.termux/files/home/ECUFlasher-Pro/app/src/main/AndroidManifest.xml:15:13-17:57
+35                android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED"
+35-->/data/data/com.termux/files/home/ECUFlasher-Pro/app/src/main/AndroidManifest.xml:16:17-79
+36                android:resource="@xml/device_filter" />
+36-->/data/data/com.termux/files/home/ECUFlasher-Pro/app/src/main/AndroidManifest.xml:17:17-54
+37
+38            <intent-filter>
+38-->/data/data/com.termux/files/home/ECUFlasher-Pro/app/src/main/AndroidManifest.xml:19:13-22:29
+39                <action android:name="android.intent.action.MAIN" />
+39-->/data/data/com.termux/files/home/ECUFlasher-Pro/app/src/main/AndroidManifest.xml:20:17-68
+39-->/data/data/com.termux/files/home/ECUFlasher-Pro/app/src/main/AndroidManifest.xml:20:25-66
+40
+41                <category android:name="android.intent.category.LAUNCHER" />
+41-->/data/data/com.termux/files/home/ECUFlasher-Pro/app/src/main/AndroidManifest.xml:21:17-76
+41-->/data/data/com.termux/files/home/ECUFlasher-Pro/app/src/main/AndroidManifest.xml:21:27-74
+42            </intent-filter>
+43        </activity>
+44
+45        <provider
+45-->[androidx.emoji2:emoji2:1.2.0] /data/data/com.termux/files/home/.gradle/caches/transforms-3/3a7ada3a889b9ea2c31a262f7dbe4410/transformed/emoji2-1.2.0/AndroidManifest.xml:24:9-32:20
+46            android:name="androidx.startup.InitializationProvider"
+46-->[androidx.emoji2:emoji2:1.2.0] /data/data/com.termux/files/home/.gradle/caches/transforms-3/3a7ada3a889b9ea2c31a262f7dbe4410/transformed/emoji2-1.2.0/AndroidManifest.xml:25:13-67
+47            android:authorities="com.ecuflasher.androidx-startup"
+47-->[androidx.emoji2:emoji2:1.2.0] /data/data/com.termux/files/home/.gradle/caches/transforms-3/3a7ada3a889b9ea2c31a262f7dbe4410/transformed/emoji2-1.2.0/AndroidManifest.xml:26:13-68
+48            android:exported="false" >
+48-->[androidx.emoji2:emoji2:1.2.0] /data/data/com.termux/files/home/.gradle/caches/transforms-3/3a7ada3a889b9ea2c31a262f7dbe4410/transformed/emoji2-1.2.0/AndroidManifest.xml:27:13-37
+49            <meta-data
+49-->[androidx.emoji2:emoji2:1.2.0] /data/data/com.termux/files/home/.gradle/caches/transforms-3/3a7ada3a889b9ea2c31a262f7dbe4410/transformed/emoji2-1.2.0/AndroidManifest.xml:29:13-31:52
+50                android:name="androidx.emoji2.text.EmojiCompatInitializer"
+50-->[androidx.emoji2:emoji2:1.2.0] /data/data/com.termux/files/home/.gradle/caches/transforms-3/3a7ada3a889b9ea2c31a262f7dbe4410/transformed/emoji2-1.2.0/AndroidManifest.xml:30:17-75
+51                android:value="androidx.startup" />
+51-->[androidx.emoji2:emoji2:1.2.0] /data/data/com.termux/files/home/.gradle/caches/transforms-3/3a7ada3a889b9ea2c31a262f7dbe4410/transformed/emoji2-1.2.0/AndroidManifest.xml:31:17-49
+52            <meta-data
+52-->[androidx.lifecycle:lifecycle-process:2.4.1] /data/data/com.termux/files/home/.gradle/caches/transforms-3/b89ea88383683ccd95a12f8ed6e748c2/transformed/lifecycle-process-2.4.1/AndroidManifest.xml:31:13-33:52
+53                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
+53-->[androidx.lifecycle:lifecycle-process:2.4.1] /data/data/com.termux/files/home/.gradle/caches/transforms-3/b89ea88383683ccd95a12f8ed6e748c2/transformed/lifecycle-process-2.4.1/AndroidManifest.xml:32:17-78
+54                android:value="androidx.startup" />
+54-->[androidx.lifecycle:lifecycle-process:2.4.1] /data/data/com.termux/files/home/.gradle/caches/transforms-3/b89ea88383683ccd95a12f8ed6e748c2/transformed/lifecycle-process-2.4.1/AndroidManifest.xml:33:17-49
+55        </provider>
+56    </application>
+57
+58</manifest>

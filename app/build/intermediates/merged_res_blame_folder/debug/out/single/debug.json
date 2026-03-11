@@ -1,0 +1,10 @@
+[
+    {
+        "merged": "com.ecuflasher.app-merged_res-20:/xml_device_filter.xml.flat",
+        "source": "com.ecuflasher.app-main-22:/xml/device_filter.xml"
+    },
+    {
+        "merged": "com.ecuflasher.app-merged_res-20:/layout_activity_main.xml.flat",
+        "source": "com.ecuflasher.app-main-22:/layout/activity_main.xml"
+    }
+]
