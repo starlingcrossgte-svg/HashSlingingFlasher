@@ -27,14 +27,14 @@ class MainActivity : AppCompatActivity() {
 
     private fun checkUsbDevices() {
         val usbManager = UsbDeviceManager(this)
-        val devices = usbManager.listUsbDevices()
 
-        if (devices.isEmpty()) {
-            statusText.text = "No USB Device Connected"
+        if (usbManager.isTactrixOpenPortConnected()) {
+            statusText.text = "Tactrix OpenPort 2.0 Detected"
         } else {
-            statusText.text = "USB Device Detected"
+            statusText.text = "No Tactrix OpenPort Detected"
         }
 
+        val devices = usbManager.listUsbDevices()
         EcuLogger.main("USB device count: ${devices.size}")
     }
 }
