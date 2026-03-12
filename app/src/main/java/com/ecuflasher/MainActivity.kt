@@ -27,14 +27,18 @@ class MainActivity : AppCompatActivity() {
 
     private fun checkUsbDevices() {
         val usbManager = UsbDeviceManager(this)
+        val devices = usbManager.listUsbDevices()
 
-        if (usbManager.isTactrixOpenPortConnected()) {
-            statusText.text = "Tactrix OpenPort 2.0 Detected"
+        val tactrixDevice = devices.firstOrNull {
+            it.vendorId == 1027 && it.productId == 52301
+        }
+
+        if (tactrixDevice != null) {
+            statusText.text = "Tactrix OpenPort 2.0 Connected\nVID: ${tactrixDevice.vendorId}\nPID: ${tactrixDevice.productId}"
         } else {
             statusText.text = "No Tactrix OpenPort Detected"
         }
 
-        val devices = usbManager.listUsbDevices()
         EcuLogger.main("USB device count: ${devices.size}")
     }
 }
