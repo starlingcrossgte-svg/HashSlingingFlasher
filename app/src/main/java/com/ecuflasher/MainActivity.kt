@@ -15,7 +15,7 @@ class MainActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_main)
 
-        statusText = findViewById(R.id.statusText)
+        statusText = findViewById(R.id.usbStatusText)
         refreshButton = findViewById(R.id.refreshButton)
 
         refreshButton.setOnClickListener {
@@ -26,7 +26,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun checkUsbDevices() {
-
         val usbManager = UsbDeviceManager(this)
         val devices = usbManager.listUsbDevices()
 
