@@ -35,6 +35,7 @@ class MainActivity : AppCompatActivity() {
 
         if (tactrixDevice != null) {
             statusText.text = "Tactrix OpenPort 2.0 Connected\nVID: ${tactrixDevice.vendorId}\nPID: ${tactrixDevice.productId}"
+            usbManager.logTactrixInterfaces()
         } else {
             statusText.text = "No Tactrix OpenPort Detected"
         }
