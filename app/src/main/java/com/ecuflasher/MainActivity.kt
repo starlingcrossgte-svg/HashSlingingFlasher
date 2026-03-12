@@ -26,6 +26,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun checkUsbDevices() {
+
         val usbManager = UsbDeviceManager(this)
         val devices = usbManager.listUsbDevices()
 
