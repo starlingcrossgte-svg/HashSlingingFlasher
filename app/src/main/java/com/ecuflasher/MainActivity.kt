@@ -23,6 +23,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var bytesSentText: TextView
     private lateinit var bytesReceivedText: TextView
     private lateinit var responseHexText: TextView
+    private lateinit var liveLogText: TextView
     private lateinit var refreshButton: Button
 
     private val usbReceiver = object : BroadcastReceiver() {
@@ -44,6 +45,7 @@ class MainActivity : AppCompatActivity() {
                 bytesSentText.text = "Bytes Sent: -"
                 bytesReceivedText.text = "Bytes Received: -"
                 responseHexText.text = "No response yet"
+                refreshLiveLog()
             }
         }
     }
@@ -60,6 +62,7 @@ class MainActivity : AppCompatActivity() {
         bytesSentText = findViewById(R.id.bytesSentText)
         bytesReceivedText = findViewById(R.id.bytesReceivedText)
         responseHexText = findViewById(R.id.responseHexText)
+        liveLogText = findViewById(R.id.liveLogText)
         refreshButton = findViewById(R.id.refreshButton)
 
         registerReceiver(
@@ -73,6 +76,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         EcuLogger.main("ECUFlasher started")
+        refreshLiveLog()
     }
 
     override fun onDestroy() {
@@ -96,6 +100,7 @@ class MainActivity : AppCompatActivity() {
             bytesSentText.text = "Bytes Sent: -"
             bytesReceivedText.text = "Bytes Received: -"
             responseHexText.text = "No response yet"
+            refreshLiveLog()
             return
         }
 
@@ -126,6 +131,7 @@ class MainActivity : AppCompatActivity() {
         bytesSentText.text = "Bytes Sent: -"
         bytesReceivedText.text = "Bytes Received: -"
         responseHexText.text = "No response yet"
+        refreshLiveLog()
     }
 
     private fun runTactrixTest() {
@@ -144,6 +150,11 @@ class MainActivity : AppCompatActivity() {
         } else {
             "No response yet"
         }
+        refreshLiveLog()
+    }
+
+    private fun refreshLiveLog() {
+        liveLogText.text = InAppLogStore.getAllText()
     }
 
     private fun formatCount(value: Int): String {

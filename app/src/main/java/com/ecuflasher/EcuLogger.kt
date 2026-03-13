@@ -8,24 +8,30 @@ object EcuLogger {
     private const val TAG_USB = "ECU_USB"
     private const val TAG_COMM = "ECU_COMM"
     private const val TAG_FLASH = "ECU_FLASH"
+    private const val TAG_ERROR = "ECU_ERROR"
 
     fun main(message: String) {
         Log.d(TAG_MAIN, message)
+        InAppLogStore.add(TAG_MAIN, message)
     }
 
     fun usb(message: String) {
         Log.d(TAG_USB, message)
+        InAppLogStore.add(TAG_USB, message)
     }
 
     fun comm(message: String) {
         Log.d(TAG_COMM, message)
+        InAppLogStore.add(TAG_COMM, message)
     }
 
     fun flash(message: String) {
         Log.d(TAG_FLASH, message)
+        InAppLogStore.add(TAG_FLASH, message)
     }
 
     fun error(message: String) {
-        Log.e("ECU_ERROR", message)
+        Log.e(TAG_ERROR, message)
+        InAppLogStore.add(TAG_ERROR, message)
     }
 }
