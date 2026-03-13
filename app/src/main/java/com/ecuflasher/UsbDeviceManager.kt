@@ -20,8 +20,8 @@ class UsbDeviceManager(private val context: Context) {
     companion object {
         private const val TACTRIX_VENDOR_ID = 1027
         private const val TACTRIX_PRODUCT_ID = 52301
-        private const val READ_TIMEOUT_MS = 2000
-        private const val WRITE_TIMEOUT_MS = 2000
+        private const val READ_TIMEOUT_MS = 3000
+        private const val WRITE_TIMEOUT_MS = 3000
     }
 
     private val usbManager: UsbManager =
@@ -96,72 +96,52 @@ class UsbDeviceManager(private val context: Context) {
                 EcuLogger.usb("Bulk OUT endpoint address: ${endpointOut.address}")
                 EcuLogger.usb("Bulk IN endpoint address: ${endpointIn.address}")
 
-                val testPacket = "ata\r\n".toByteArray(Charsets.US_ASCII)
-
-                EcuLogger.usb("Sending OpenPort ATA command")
-                EcuLogger.usb("Test packet length: ${testPacket.size}")
-                EcuLogger.usb("Test packet hex: ${toHex(testPacket)}")
-                EcuLogger.usb("Write timeout ms: $WRITE_TIMEOUT_MS")
-                EcuLogger.usb("Read timeout ms: $READ_TIMEOUT_MS")
-
-                val sent = connection.bulkTransfer(
-                    endpointOut,
-                    testPacket,
-                    testPacket.size,
-                    WRITE_TIMEOUT_MS
+                val initResult = sendAsciiCommand(
+                    connection = connection,
+                    endpointOut = endpointOut,
+                    endpointIn = endpointIn,
+                    commandLabel = "OpenPort ATA command",
+                    commandString = "ata\r\n"
                 )
 
-                EcuLogger.usb("Bytes sent: $sent")
+                if (!initResult.responseAscii.contains("aro")) {
+                    connection.releaseInterface(usbInterface)
+                    connection.close()
+                    EcuLogger.usb("Tactrix connection closed cleanly")
 
-                val buffer = ByteArray(128)
-                val received = connection.bulkTransfer(
-                    endpointIn,
-                    buffer,
-                    buffer.size,
-                    READ_TIMEOUT_MS
+                    return TactrixTestResult(
+                        false,
+                        "OpenPort ATA command failed before bus open",
+                        initResult.bytesSent,
+                        initResult.bytesReceived,
+                        initResult.responseHex
+                    )
+                }
+
+                val busResult = sendAsciiCommand(
+                    connection = connection,
+                    endpointOut = endpointOut,
+                    endpointIn = endpointIn,
+                    commandLabel = "OpenPort ATO command",
+                    commandString = "ato4 0 10400 0\r\n"
                 )
-
-                EcuLogger.usb("Bytes received: $received")
-
-                val responseHex = if (received > 0) {
-                    buffer.copyOf(received).joinToString(" ") {
-                        "%02X".format(it.toInt() and 0xFF)
-                    }
-                } else {
-                    ""
-                }
-
-                val responseAscii = if (received > 0) {
-                    String(buffer, 0, received, Charsets.US_ASCII)
-                } else {
-                    ""
-                }
-
-                if (received > 0) {
-                    EcuLogger.usb("Response bytes: $responseHex")
-                    EcuLogger.usb("Response ascii: $responseAscii")
-                } else if (received == 0) {
-                    EcuLogger.usb("No data returned")
-                } else {
-                    EcuLogger.usb("Read timed out or no response from device")
-                }
 
                 connection.releaseInterface(usbInterface)
                 connection.close()
                 EcuLogger.usb("Tactrix connection closed cleanly")
 
-                val success = sent > 0 && responseAscii.contains("aro")
+                val success = busResult.responseAscii.contains("aro")
 
                 return TactrixTestResult(
                     success = success,
                     statusMessage = if (success) {
-                        "OpenPort ATA command responded"
+                        "OpenPort bus open command responded"
                     } else {
-                        "OpenPort ATA command sent but no valid response"
+                        "OpenPort bus open command sent but no valid response"
                     },
-                    bytesSent = sent,
-                    bytesReceived = received,
-                    responseHex = responseHex
+                    bytesSent = busResult.bytesSent,
+                    bytesReceived = busResult.bytesReceived,
+                    responseHex = busResult.responseHex
                 )
             }
         }
@@ -173,6 +153,79 @@ class UsbDeviceManager(private val context: Context) {
             -1,
             -1,
             ""
+        )
+    }
+
+    private data class CommandResult(
+        val bytesSent: Int,
+        val bytesReceived: Int,
+        val responseHex: String,
+        val responseAscii: String
+    )
+
+    private fun sendAsciiCommand(
+        connection: android.hardware.usb.UsbDeviceConnection,
+        endpointOut: UsbEndpoint,
+        endpointIn: UsbEndpoint,
+        commandLabel: String,
+        commandString: String
+    ): CommandResult {
+        val packet = commandString.toByteArray(Charsets.US_ASCII)
+
+        EcuLogger.usb("Sending $commandLabel")
+        EcuLogger.usb("Command text: ${commandString.replace("\r", "\\r").replace("\n", "\\n")}")
+        EcuLogger.usb("Packet length: ${packet.size}")
+        EcuLogger.usb("Packet hex: ${toHex(packet)}")
+        EcuLogger.usb("Write timeout ms: $WRITE_TIMEOUT_MS")
+        EcuLogger.usb("Read timeout ms: $READ_TIMEOUT_MS")
+
+        val sent = connection.bulkTransfer(
+            endpointOut,
+            packet,
+            packet.size,
+            WRITE_TIMEOUT_MS
+        )
+
+        EcuLogger.usb("Bytes sent: $sent")
+
+        val buffer = ByteArray(128)
+        val received = connection.bulkTransfer(
+            endpointIn,
+            buffer,
+            buffer.size,
+            READ_TIMEOUT_MS
+        )
+
+        EcuLogger.usb("Bytes received: $received")
+
+        val responseHex = if (received > 0) {
+            buffer.copyOf(received).joinToString(" ") {
+                "%02X".format(it.toInt() and 0xFF)
+            }
+        } else {
+            ""
+        }
+
+        val responseAscii = if (received > 0) {
+            String(buffer, 0, received, Charsets.US_ASCII)
+        } else {
+            ""
+        }
+
+        if (received > 0) {
+            EcuLogger.usb("Response bytes: $responseHex")
+            EcuLogger.usb("Response ascii: $responseAscii")
+        } else if (received == 0) {
+            EcuLogger.usb("No data returned")
+        } else {
+            EcuLogger.usb("Read timed out or no response from device")
+        }
+
+        return CommandResult(
+            bytesSent = sent,
+            bytesReceived = received,
+            responseHex = responseHex,
+            responseAscii = responseAscii
         )
     }
 
