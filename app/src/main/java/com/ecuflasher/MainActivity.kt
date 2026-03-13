@@ -21,21 +21,17 @@ class MainActivity : AppCompatActivity() {
 
     private val usbReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
-            if (intent?.action == ACTION_USB_PERMISSION) {
-                val device: UsbDevice? =
-                    intent.getParcelableExtra(UsbManager.EXTRA_DEVICE)
+            if (intent?.action != ACTION_USB_PERMISSION) return
 
-                if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false) && device != null) {
-                    EcuLogger.usb("USB permission granted")
+            val device: UsbDevice? =
+                intent.getParcelableExtra(UsbManager.EXTRA_DEVICE)
 
-                    val manager = UsbDeviceManager(this@MainActivity)
-                    val result = manager.openTactrixChannel()
-
-                    statusText.text = buildStatusText(result)
-                } else {
-                    EcuLogger.usb("USB permission denied")
-                    statusText.text = "USB permission denied"
-                }
+            if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false) && device != null) {
+                EcuLogger.usb("USB permission granted")
+                runTactrixTest()
+            } else {
+                EcuLogger.usb("USB permission denied")
+                statusText.text = "USB permission denied"
             }
         }
     }
@@ -69,7 +65,8 @@ class MainActivity : AppCompatActivity() {
     private fun checkTactrix() {
         val systemUsbManager = getSystemService(USB_SERVICE) as UsbManager
         val tactrixDevice = systemUsbManager.deviceList.values.firstOrNull {
-            it.vendorId == 1027 && it.productId == 52301
+            it.vendorId == UsbTransport.TACTRIX_VENDOR_ID &&
+            it.productId == UsbTransport.TACTRIX_PRODUCT_ID
         }
 
         if (tactrixDevice == null) {
@@ -79,22 +76,29 @@ class MainActivity : AppCompatActivity() {
         }
 
         if (!systemUsbManager.hasPermission(tactrixDevice)) {
-            val permissionIntent = PendingIntent.getBroadcast(
-                this,
-                0,
-                Intent(ACTION_USB_PERMISSION),
-                PendingIntent.FLAG_IMMUTABLE
-            )
-
-            systemUsbManager.requestPermission(tactrixDevice, permissionIntent)
-            EcuLogger.usb("Requested USB permission for Tactrix")
-            statusText.text = "Requesting USB permission..."
+            requestUsbPermission(systemUsbManager, tactrixDevice)
             return
         }
 
+        runTactrixTest()
+    }
+
+    private fun requestUsbPermission(systemUsbManager: UsbManager, tactrixDevice: UsbDevice) {
+        val permissionIntent = PendingIntent.getBroadcast(
+            this,
+            0,
+            Intent(ACTION_USB_PERMISSION),
+            PendingIntent.FLAG_IMMUTABLE
+        )
+
+        systemUsbManager.requestPermission(tactrixDevice, permissionIntent)
+        EcuLogger.usb("Requested USB permission for Tactrix")
+        statusText.text = "Requesting USB permission..."
+    }
+
+    private fun runTactrixTest() {
         val manager = UsbDeviceManager(this)
         val result = manager.openTactrixChannel()
-
         statusText.text = buildStatusText(result)
     }
 
