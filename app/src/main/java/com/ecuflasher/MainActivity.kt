@@ -34,7 +34,14 @@ class MainActivity : AppCompatActivity() {
         }
 
         if (tactrixDevice != null) {
-            statusText.text = "Tactrix OpenPort 2.0 Connected\nVID: ${tactrixDevice.vendorId}\nPID: ${tactrixDevice.productId}"
+            val opened = usbManager.openTactrixConnection()
+
+            statusText.text = if (opened) {
+                "Tactrix OpenPort 2.0 Connected\nVID: ${tactrixDevice.vendorId}\nPID: ${tactrixDevice.productId}\nUSB channel opened"
+            } else {
+                "Tactrix detected but failed to open USB channel"
+            }
+
             usbManager.logTactrixInterfaces()
         } else {
             statusText.text = "No Tactrix OpenPort Detected"
