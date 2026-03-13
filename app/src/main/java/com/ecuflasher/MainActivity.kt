@@ -46,7 +46,8 @@ class MainActivity : AppCompatActivity() {
 
         registerReceiver(
             usbReceiver,
-            IntentFilter(ACTION_USB_PERMISSION)
+            IntentFilter(ACTION_USB_PERMISSION),
+            Context.RECEIVER_NOT_EXPORTED
         )
 
         refreshButton.setOnClickListener {
