@@ -27,7 +27,15 @@ class MainActivity : AppCompatActivity() {
 
                 if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false) && device != null) {
                     EcuLogger.usb("USB permission granted")
-                    checkUsbDevices()
+
+                    val usbDeviceManager = UsbDeviceManager(this@MainActivity)
+                    val opened = usbDeviceManager.openTactrixConnection()
+
+                    statusText.text = if (opened) {
+                        "Tactrix OpenPort 2.0 Connected\nVID: ${device.vendorId}\nPID: ${device.productId}\nUSB channel opened"
+                    } else {
+                        "Tactrix detected but failed to open USB channel"
+                    }
                 } else {
                     EcuLogger.usb("USB permission denied")
                     statusText.text = "USB permission denied"
