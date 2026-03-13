@@ -20,6 +20,8 @@ class UsbDeviceManager(private val context: Context) {
     companion object {
         private const val TACTRIX_VENDOR_ID = 1027
         private const val TACTRIX_PRODUCT_ID = 52301
+        private const val READ_TIMEOUT_MS = 1000
+        private const val WRITE_TIMEOUT_MS = 1000
     }
 
     private val usbManager: UsbManager =
@@ -111,12 +113,14 @@ class UsbDeviceManager(private val context: Context) {
                 EcuLogger.usb("Sending transport test packet")
                 EcuLogger.usb("Test packet length: ${testPacket.size}")
                 EcuLogger.usb("Test packet hex: ${toHex(testPacket)}")
+                EcuLogger.usb("Write timeout ms: $WRITE_TIMEOUT_MS")
+                EcuLogger.usb("Read timeout ms: $READ_TIMEOUT_MS")
 
                 val sent = connection.bulkTransfer(
                     endpointOut,
                     testPacket,
                     testPacket.size,
-                    1000
+                    WRITE_TIMEOUT_MS
                 )
 
                 EcuLogger.usb("Bytes sent: $sent")
@@ -126,7 +130,7 @@ class UsbDeviceManager(private val context: Context) {
                     endpointIn,
                     buffer,
                     buffer.size,
-                    1000
+                    READ_TIMEOUT_MS
                 )
 
                 EcuLogger.usb("Bytes received: $received")
