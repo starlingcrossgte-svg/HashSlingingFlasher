@@ -35,11 +35,7 @@ class OpenPortClient(
     fun sendObdCanQuery0100(): CommandResult {
         SessionSummaryStore.setEcuQuery(OpenPortConstants.SESSION_ECU_QUERY_MODE_01_PID_00)
 
-        val canFrame = byteArrayOf(
-            0x00, 0x00, 0x07, 0xDF.toByte(),
-            0x02, 0x01, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00
-        )
+        val canFrame = CanFrameBuilder.buildObdMode01Pid00Frame()
 
         val header = "att6 ${canFrame.size} 0\r\n".toByteArray(Charsets.US_ASCII)
         val packet = ByteArray(header.size + canFrame.size)
