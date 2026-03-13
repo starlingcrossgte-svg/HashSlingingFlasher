@@ -20,7 +20,7 @@ class UsbDeviceManager(private val context: Context) {
     companion object {
         private const val TACTRIX_VENDOR_ID = 1027
         private const val TACTRIX_PRODUCT_ID = 52301
-        private const val READ_TIMEOUT_MS = 3000
+        private const val READ_TIMEOUT_MS = 4000
         private const val WRITE_TIMEOUT_MS = 3000
     }
 
@@ -34,7 +34,6 @@ class UsbDeviceManager(private val context: Context) {
             if (device.vendorId == TACTRIX_VENDOR_ID &&
                 device.productId == TACTRIX_PRODUCT_ID
             ) {
-
                 EcuLogger.usb("Opening Tactrix connection")
 
                 val connection = usbManager.openDevice(device)
@@ -72,7 +71,7 @@ class UsbDeviceManager(private val context: Context) {
                 EcuLogger.usb("Bulk OUT endpoint address: ${endpointOut.address}")
                 EcuLogger.usb("Bulk IN endpoint address: ${endpointIn.address}")
 
-                val initResult = sendAsciiCommand(
+                val ataResult = sendAsciiCommand(
                     connection = connection,
                     endpointOut = endpointOut,
                     endpointIn = endpointIn,
@@ -80,21 +79,20 @@ class UsbDeviceManager(private val context: Context) {
                     commandString = "ata\r\n"
                 )
 
-                if (!initResult.responseAscii.contains("aro")) {
+                if (!ataResult.responseAscii.contains("aro")) {
                     connection.releaseInterface(usbInterface)
                     connection.close()
                     EcuLogger.usb("Tactrix connection closed cleanly")
-
                     return TactrixTestResult(
                         false,
-                        "OpenPort ATA command failed before CAN bus open",
-                        initResult.bytesSent,
-                        initResult.bytesReceived,
-                        initResult.responseHex
+                        "OpenPort ATA failed before ECU query",
+                        ataResult.bytesSent,
+                        ataResult.bytesReceived,
+                        ataResult.responseHex
                     )
                 }
 
-                val busResult = sendAsciiCommand(
+                val atoResult = sendAsciiCommand(
                     connection = connection,
                     endpointOut = endpointOut,
                     endpointIn = endpointIn,
@@ -102,22 +100,46 @@ class UsbDeviceManager(private val context: Context) {
                     commandString = "ato6 0 500000 0\r\n"
                 )
 
+                if (!atoResult.responseAscii.contains("aro")) {
+                    connection.releaseInterface(usbInterface)
+                    connection.close()
+                    EcuLogger.usb("Tactrix connection closed cleanly")
+                    return TactrixTestResult(
+                        false,
+                        "OpenPort CAN bus open failed before ECU query",
+                        atoResult.bytesSent,
+                        atoResult.bytesReceived,
+                        atoResult.responseHex
+                    )
+                }
+
+                val ecuResult = sendObdCanQuery(
+                    connection = connection,
+                    endpointOut = endpointOut,
+                    endpointIn = endpointIn
+                )
+
                 connection.releaseInterface(usbInterface)
                 connection.close()
                 EcuLogger.usb("Tactrix connection closed cleanly")
 
-                val success = busResult.responseAscii.contains("aro")
+                val success = containsSequence(
+                    ecuResult.responseBytes,
+                    byteArrayOf(0x41, 0x00)
+                )
 
                 return TactrixTestResult(
                     success = success,
                     statusMessage = if (success) {
-                        "OpenPort CAN bus open command responded"
+                        "ECU response received"
+                    } else if (ecuResult.bytesReceived > 0) {
+                        "Raw vehicle response received"
                     } else {
-                        "OpenPort CAN bus open command sent but no valid response"
+                        "ECU query sent but no response"
                     },
-                    bytesSent = busResult.bytesSent,
-                    bytesReceived = busResult.bytesReceived,
-                    responseHex = busResult.responseHex
+                    bytesSent = ecuResult.bytesSent,
+                    bytesReceived = ecuResult.bytesReceived,
+                    responseHex = ecuResult.responseHex
                 )
             }
         }
@@ -130,7 +152,8 @@ class UsbDeviceManager(private val context: Context) {
         val bytesSent: Int,
         val bytesReceived: Int,
         val responseHex: String,
-        val responseAscii: String
+        val responseAscii: String,
+        val responseBytes: ByteArray
     )
 
     private fun sendAsciiCommand(
@@ -168,16 +191,20 @@ class UsbDeviceManager(private val context: Context) {
 
         EcuLogger.usb("Bytes received: $received")
 
+        val responseBytes = if (received > 0) {
+            buffer.copyOf(received)
+        } else {
+            byteArrayOf()
+        }
+
         val responseHex = if (received > 0) {
-            buffer.copyOf(received).joinToString(" ") {
-                "%02X".format(it.toInt() and 0xFF)
-            }
+            toHex(responseBytes)
         } else {
             ""
         }
 
         val responseAscii = if (received > 0) {
-            String(buffer, 0, received, Charsets.US_ASCII)
+            String(responseBytes, Charsets.US_ASCII)
         } else {
             ""
         }
@@ -195,8 +222,106 @@ class UsbDeviceManager(private val context: Context) {
             bytesSent = sent,
             bytesReceived = received,
             responseHex = responseHex,
-            responseAscii = responseAscii
+            responseAscii = responseAscii,
+            responseBytes = responseBytes
         )
+    }
+
+    private fun sendObdCanQuery(
+        connection: android.hardware.usb.UsbDeviceConnection,
+        endpointOut: UsbEndpoint,
+        endpointIn: UsbEndpoint
+    ): CommandResult {
+        val canFrame = byteArrayOf(
+            0x00, 0x00, 0x07, 0xDF.toByte(),
+            0x02, 0x01, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00
+        )
+
+        val header = "att6 ${canFrame.size} 0\r\n".toByteArray(Charsets.US_ASCII)
+        val packet = ByteArray(header.size + canFrame.size)
+
+        System.arraycopy(header, 0, packet, 0, header.size)
+        System.arraycopy(canFrame, 0, packet, header.size, canFrame.size)
+
+        EcuLogger.usb("Sending ECU OBD CAN query")
+        EcuLogger.usb("Command text: att6 ${canFrame.size} 0\\r\\n + raw CAN frame")
+        EcuLogger.usb("CAN frame hex: ${toHex(canFrame)}")
+        EcuLogger.usb("Packet length: ${packet.size}")
+        EcuLogger.usb("Packet hex: ${toHex(packet)}")
+        EcuLogger.usb("Write timeout ms: $WRITE_TIMEOUT_MS")
+        EcuLogger.usb("Read timeout ms: $READ_TIMEOUT_MS")
+
+        val sent = connection.bulkTransfer(
+            endpointOut,
+            packet,
+            packet.size,
+            WRITE_TIMEOUT_MS
+        )
+
+        EcuLogger.usb("Bytes sent: $sent")
+
+        val buffer = ByteArray(256)
+        val received = connection.bulkTransfer(
+            endpointIn,
+            buffer,
+            buffer.size,
+            READ_TIMEOUT_MS
+        )
+
+        EcuLogger.usb("Bytes received: $received")
+
+        val responseBytes = if (received > 0) {
+            buffer.copyOf(received)
+        } else {
+            byteArrayOf()
+        }
+
+        val responseHex = if (received > 0) {
+            toHex(responseBytes)
+        } else {
+            ""
+        }
+
+        val responseAscii = if (received > 0) {
+            String(responseBytes, Charsets.US_ASCII)
+        } else {
+            ""
+        }
+
+        if (received > 0) {
+            EcuLogger.usb("Response bytes: $responseHex")
+            EcuLogger.usb("Response ascii: $responseAscii")
+        } else if (received == 0) {
+            EcuLogger.usb("No data returned")
+        } else {
+            EcuLogger.usb("Read timed out or no ECU response")
+        }
+
+        return CommandResult(
+            bytesSent = sent,
+            bytesReceived = received,
+            responseHex = responseHex,
+            responseAscii = responseAscii,
+            responseBytes = responseBytes
+        )
+    }
+
+    private fun containsSequence(data: ByteArray, pattern: ByteArray): Boolean {
+        if (pattern.isEmpty() || data.size < pattern.size) return false
+
+        for (i in 0..data.size - pattern.size) {
+            var match = true
+            for (j in pattern.indices) {
+                if (data[i + j] != pattern[j]) {
+                    match = false
+                    break
+                }
+            }
+            if (match) return true
+        }
+
+        return false
     }
 
     private fun findBulkCommunicationInterface(device: UsbDevice): UsbInterface? {
