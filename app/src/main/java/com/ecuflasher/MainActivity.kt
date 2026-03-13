@@ -9,9 +9,11 @@ import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
 import android.os.Bundle
 import android.view.View
+import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
+import android.widget.Spinner
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 
@@ -43,6 +45,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var summaryResponseTypeText: TextView
     private lateinit var summaryErrorText: TextView
 
+    private lateinit var manualCommandPresetSpinner: Spinner
     private lateinit var manualCommandInput: EditText
     private lateinit var sendManualCommandButton: Button
     private lateinit var manualCommandResponseText: TextView
@@ -50,6 +53,13 @@ class MainActivity : AppCompatActivity() {
     private lateinit var liveLogText: TextView
     private lateinit var clearLogsButton: Button
     private lateinit var refreshButton: Button
+
+    private val manualCommandPresets = listOf(
+        "Custom",
+        "ati\\r\\n",
+        "ata\\r\\n",
+        "ato6 0 500000 0\\r\\n"
+    )
 
     private val usbReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -108,6 +118,7 @@ class MainActivity : AppCompatActivity() {
         summaryResponseTypeText = findViewById(R.id.summaryResponseTypeText)
         summaryErrorText = findViewById(R.id.summaryErrorText)
 
+        manualCommandPresetSpinner = findViewById(R.id.manualCommandPresetSpinner)
         manualCommandInput = findViewById(R.id.manualCommandInput)
         sendManualCommandButton = findViewById(R.id.sendManualCommandButton)
         manualCommandResponseText = findViewById(R.id.manualCommandResponseText)
@@ -115,6 +126,8 @@ class MainActivity : AppCompatActivity() {
         liveLogText = findViewById(R.id.liveLogText)
         clearLogsButton = findViewById(R.id.clearLogsButton)
         refreshButton = findViewById(R.id.refreshButton)
+
+        setupManualCommandPresetSpinner()
 
         manualCommandInput.setText(appSettingsStore.getLastManualCommand())
 
@@ -153,6 +166,35 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         unregisterReceiver(usbReceiver)
+    }
+
+    private fun setupManualCommandPresetSpinner() {
+        val adapter = ArrayAdapter(
+            this,
+            android.R.layout.simple_spinner_item,
+            manualCommandPresets
+        )
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        manualCommandPresetSpinner.adapter = adapter
+
+        manualCommandPresetSpinner.setSelection(0, false)
+        manualCommandPresetSpinner.onItemSelectedListener =
+            object : android.widget.AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(
+                    parent: android.widget.AdapterView<*>?,
+                    view: View?,
+                    position: Int,
+                    id: Long
+                ) {
+                    val selected = manualCommandPresets[position]
+                    if (selected != "Custom") {
+                        manualCommandInput.setText(selected)
+                    }
+                }
+
+                override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {
+                }
+            }
     }
 
     private fun checkTactrix() {
