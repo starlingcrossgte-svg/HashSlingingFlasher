@@ -1,6 +1,6 @@
-# ECUFlasher-Pro
+# HashSlingingFlasher
 
-ECUFlasher-Pro is an experimental Android application designed to communicate with automotive ECUs directly from a mobile device.
+HashSlingingFlasher is an experimental Android application designed to communicate >
 
 This project is focused on building a clean Android-first communication stack for professional vehicle interfaces such as the Tactrix OpenPort 2.0, without relying on the traditional PC-based driver workflow.
 
@@ -51,7 +51,7 @@ This project is being developed in a mobile-first workflow using Android devices
 
 ## License
 
-ECUFlasher-Pro is released under the GNU General Public License v3.0 (GPLv3).
+HashSlingingFlasher-Pro is released under the GNU General Public License v3.0 (GPLv3).
 
 See the `LICENSE` file for full details.
 
