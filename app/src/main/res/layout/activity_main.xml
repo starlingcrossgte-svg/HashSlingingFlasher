@@ -1,27 +1,143 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
-    android:background="#FFFFFF"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:gravity="center"
-    android:padding="16dp">
+    android:fillViewport="true"
+    android:background="#F5F5F5">
 
-    <TextView
-        android:id="@+id/usbStatusText"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="USB Status Unknown"
-        android:textSize="22sp"
-        android:textColor="#333333"
-        android:textStyle="bold"
-        android:padding="16dp"/>
+        android:orientation="vertical"
+        android:padding="20dp">
 
-    <Button
-        android:id="@+id/refreshButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="REFRESH USB STATUS"
-        android:layout_marginTop="24dp"/>
+        <TextView
+            android:id="@+id/appTitleText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="ECUFlasher"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            android:textColor="#111111"
+            android:layout_marginBottom="20dp" />
 
-</LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="#FFFFFF"
+            android:padding="16dp"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Overall Status"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="#666666" />
+
+            <TextView
+                android:id="@+id/statusMessageText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="USB Status Unknown"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:textColor="#222222" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="#FFFFFF"
+            android:padding="16dp"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Debug Details"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="#666666"
+                android:layout_marginBottom="12dp" />
+
+            <TextView
+                android:id="@+id/deviceStateText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Device: Unknown"
+                android:textSize="16sp"
+                android:textColor="#222222"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:id="@+id/permissionStateText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Permission: Unknown"
+                android:textSize="16sp"
+                android:textColor="#222222"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:id="@+id/lastCommandText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Last Command: None"
+                android:textSize="16sp"
+                android:textColor="#222222"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:id="@+id/bytesSentText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Bytes Sent: -"
+                android:textSize="16sp"
+                android:textColor="#222222"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:id="@+id/bytesReceivedText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Bytes Received: -"
+                android:textSize="16sp"
+                android:textColor="#222222"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:id="@+id/responseHexLabelText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Response Hex"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="#666666"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="6dp" />
+
+            <TextView
+                android:id="@+id/responseHexText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="No response yet"
+                android:textSize="15sp"
+                android:textColor="#222222"
+                android:background="#F0F0F0"
+                android:padding="12dp" />
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/refreshButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="REFRESH USB STATUS"
+            android:padding="14dp" />
+
+    </LinearLayout>
+</ScrollView>

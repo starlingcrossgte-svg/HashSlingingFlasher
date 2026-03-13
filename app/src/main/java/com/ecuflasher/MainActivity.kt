@@ -16,7 +16,13 @@ class MainActivity : AppCompatActivity() {
 
     private val ACTION_USB_PERMISSION = "com.ecuflasher.USB_PERMISSION"
 
-    private lateinit var statusText: TextView
+    private lateinit var statusMessageText: TextView
+    private lateinit var deviceStateText: TextView
+    private lateinit var permissionStateText: TextView
+    private lateinit var lastCommandText: TextView
+    private lateinit var bytesSentText: TextView
+    private lateinit var bytesReceivedText: TextView
+    private lateinit var responseHexText: TextView
     private lateinit var refreshButton: Button
 
     private val usbReceiver = object : BroadcastReceiver() {
@@ -28,10 +34,16 @@ class MainActivity : AppCompatActivity() {
 
             if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false) && device != null) {
                 EcuLogger.usb("USB permission granted")
+                permissionStateText.text = "Permission: Granted"
                 runTactrixTest()
             } else {
                 EcuLogger.usb("USB permission denied")
-                statusText.text = "USB permission denied"
+                permissionStateText.text = "Permission: Denied"
+                statusMessageText.text = "USB permission denied"
+                lastCommandText.text = "Last Command: None"
+                bytesSentText.text = "Bytes Sent: -"
+                bytesReceivedText.text = "Bytes Received: -"
+                responseHexText.text = "No response yet"
             }
         }
     }
@@ -41,7 +53,13 @@ class MainActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_main)
 
-        statusText = findViewById(R.id.usbStatusText)
+        statusMessageText = findViewById(R.id.statusMessageText)
+        deviceStateText = findViewById(R.id.deviceStateText)
+        permissionStateText = findViewById(R.id.permissionStateText)
+        lastCommandText = findViewById(R.id.lastCommandText)
+        bytesSentText = findViewById(R.id.bytesSentText)
+        bytesReceivedText = findViewById(R.id.bytesReceivedText)
+        responseHexText = findViewById(R.id.responseHexText)
         refreshButton = findViewById(R.id.refreshButton)
 
         registerReceiver(
@@ -71,15 +89,25 @@ class MainActivity : AppCompatActivity() {
 
         if (tactrixDevice == null) {
             EcuLogger.usb("Tactrix device not found")
-            statusText.text = "Tactrix device not detected"
+            deviceStateText.text = "Device: Not Detected"
+            permissionStateText.text = "Permission: N/A"
+            statusMessageText.text = "Tactrix device not detected"
+            lastCommandText.text = "Last Command: None"
+            bytesSentText.text = "Bytes Sent: -"
+            bytesReceivedText.text = "Bytes Received: -"
+            responseHexText.text = "No response yet"
             return
         }
 
+        deviceStateText.text = "Device: Tactrix OpenPort 2.0 Detected"
+
         if (!systemUsbManager.hasPermission(tactrixDevice)) {
+            permissionStateText.text = "Permission: Not Granted"
             requestUsbPermission(systemUsbManager, tactrixDevice)
             return
         }
 
+        permissionStateText.text = "Permission: Granted"
         runTactrixTest()
     }
 
@@ -93,24 +121,32 @@ class MainActivity : AppCompatActivity() {
 
         systemUsbManager.requestPermission(tactrixDevice, permissionIntent)
         EcuLogger.usb("Requested USB permission for Tactrix")
-        statusText.text = "Requesting USB permission..."
+        statusMessageText.text = "Requesting USB permission..."
+        lastCommandText.text = "Last Command: Permission Request"
+        bytesSentText.text = "Bytes Sent: -"
+        bytesReceivedText.text = "Bytes Received: -"
+        responseHexText.text = "No response yet"
     }
 
     private fun runTactrixTest() {
         val manager = UsbDeviceManager(this)
         val result = manager.openTactrixChannel()
-        statusText.text = buildStatusText(result)
+        renderResult(result)
     }
 
-    private fun buildStatusText(result: TactrixTestResult): String {
-        return if (result.success) {
-            if (result.responseHex.isNotEmpty()) {
-                "${result.statusMessage}\nSent: ${result.bytesSent}\nReceived: ${result.bytesReceived}\nResponse: ${result.responseHex}"
-            } else {
-                "${result.statusMessage}\nSent: ${result.bytesSent}\nReceived: ${result.bytesReceived}"
-            }
+    private fun renderResult(result: TactrixTestResult) {
+        statusMessageText.text = result.statusMessage
+        lastCommandText.text = "Last Command: USB Refresh/Test Run"
+        bytesSentText.text = "Bytes Sent: ${formatCount(result.bytesSent)}"
+        bytesReceivedText.text = "Bytes Received: ${formatCount(result.bytesReceived)}"
+        responseHexText.text = if (result.responseHex.isNotEmpty()) {
+            result.responseHex
         } else {
-            result.statusMessage
+            "No response yet"
         }
+    }
+
+    private fun formatCount(value: Int): String {
+        return if (value >= 0) value.toString() else "-"
     }
 }
