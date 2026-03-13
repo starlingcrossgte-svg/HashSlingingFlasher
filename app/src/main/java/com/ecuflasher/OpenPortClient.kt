@@ -22,6 +22,7 @@ class OpenPortClient(
     )
 
     fun openCommandChannel(): CommandResult {
+        SessionSummaryStore.setOpenPortCommand("ATA")
         return sendAsciiCommand(
             commandLabel = "OpenPort ATA command",
             commandString = "ata\r\n"
@@ -29,6 +30,7 @@ class OpenPortClient(
     }
 
     fun openCanBus500k(): CommandResult {
+        SessionSummaryStore.setBusMode("CAN 500k")
         return sendAsciiCommand(
             commandLabel = "OpenPort ATO CAN command",
             commandString = "ato6 0 500000 0\r\n"
@@ -36,6 +38,8 @@ class OpenPortClient(
     }
 
     fun sendObdCanQuery0100(): CommandResult {
+        SessionSummaryStore.setEcuQuery("OBD Mode 01 PID 00")
+
         val canFrame = byteArrayOf(
             0x00, 0x00, 0x07, 0xDF.toByte(),
             0x02, 0x01, 0x00,
@@ -96,10 +100,16 @@ class OpenPortClient(
         if (received > 0) {
             EcuLogger.usb("Response bytes: $responseHex")
             EcuLogger.usb("Response ascii: $responseAscii")
+            SessionSummaryStore.setResponseType("Vehicle response received")
+            SessionSummaryStore.setError("None")
         } else if (received == 0) {
             EcuLogger.usb("No data returned")
+            SessionSummaryStore.setResponseType("No data returned")
+            SessionSummaryStore.setError("None")
         } else {
             EcuLogger.usb("Read timed out or no ECU response")
+            SessionSummaryStore.setResponseType("No ECU response")
+            SessionSummaryStore.setError("Read timeout")
         }
 
         return CommandResult(
@@ -164,10 +174,16 @@ class OpenPortClient(
         if (received > 0) {
             EcuLogger.usb("Response bytes: $responseHex")
             EcuLogger.usb("Response ascii: $responseAscii")
+            SessionSummaryStore.setResponseType("OpenPort response received")
+            SessionSummaryStore.setError("None")
         } else if (received == 0) {
             EcuLogger.usb("No data returned")
+            SessionSummaryStore.setResponseType("No data returned")
+            SessionSummaryStore.setError("None")
         } else {
             EcuLogger.usb("Read timed out or no response from device")
+            SessionSummaryStore.setResponseType("No OpenPort response")
+            SessionSummaryStore.setError("Read timeout")
         }
 
         return CommandResult(

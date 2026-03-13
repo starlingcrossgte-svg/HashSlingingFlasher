@@ -23,6 +23,13 @@ class MainActivity : AppCompatActivity() {
     private lateinit var bytesSentText: TextView
     private lateinit var bytesReceivedText: TextView
     private lateinit var responseHexText: TextView
+
+    private lateinit var summaryOpenPortCommandText: TextView
+    private lateinit var summaryBusModeText: TextView
+    private lateinit var summaryEcuQueryText: TextView
+    private lateinit var summaryResponseTypeText: TextView
+    private lateinit var summaryErrorText: TextView
+
     private lateinit var liveLogText: TextView
     private lateinit var refreshButton: Button
 
@@ -46,6 +53,7 @@ class MainActivity : AppCompatActivity() {
                 bytesReceivedText.text = "Bytes Received: -"
                 responseHexText.text = "No response yet"
                 refreshLiveLog()
+                refreshSessionSummary()
             }
         }
     }
@@ -62,6 +70,13 @@ class MainActivity : AppCompatActivity() {
         bytesSentText = findViewById(R.id.bytesSentText)
         bytesReceivedText = findViewById(R.id.bytesReceivedText)
         responseHexText = findViewById(R.id.responseHexText)
+
+        summaryOpenPortCommandText = findViewById(R.id.summaryOpenPortCommandText)
+        summaryBusModeText = findViewById(R.id.summaryBusModeText)
+        summaryEcuQueryText = findViewById(R.id.summaryEcuQueryText)
+        summaryResponseTypeText = findViewById(R.id.summaryResponseTypeText)
+        summaryErrorText = findViewById(R.id.summaryErrorText)
+
         liveLogText = findViewById(R.id.liveLogText)
         refreshButton = findViewById(R.id.refreshButton)
 
@@ -77,6 +92,7 @@ class MainActivity : AppCompatActivity() {
 
         EcuLogger.main("ECUFlasher started")
         refreshLiveLog()
+        refreshSessionSummary()
     }
 
     override fun onDestroy() {
@@ -101,6 +117,7 @@ class MainActivity : AppCompatActivity() {
             bytesReceivedText.text = "Bytes Received: -"
             responseHexText.text = "No response yet"
             refreshLiveLog()
+            refreshSessionSummary()
             return
         }
 
@@ -132,6 +149,7 @@ class MainActivity : AppCompatActivity() {
         bytesReceivedText.text = "Bytes Received: -"
         responseHexText.text = "No response yet"
         refreshLiveLog()
+        refreshSessionSummary()
     }
 
     private fun runTactrixTest() {
@@ -151,10 +169,24 @@ class MainActivity : AppCompatActivity() {
             "No response yet"
         }
         refreshLiveLog()
+        refreshSessionSummary()
     }
 
     private fun refreshLiveLog() {
         liveLogText.text = InAppLogStore.getAllText()
+    }
+
+    private fun refreshSessionSummary() {
+        summaryOpenPortCommandText.text =
+            "OpenPort Command: ${SessionSummaryStore.lastOpenPortCommand}"
+        summaryBusModeText.text =
+            "Bus Mode: ${SessionSummaryStore.lastBusMode}"
+        summaryEcuQueryText.text =
+            "ECU Query: ${SessionSummaryStore.lastEcuQuery}"
+        summaryResponseTypeText.text =
+            "Response Type: ${SessionSummaryStore.lastResponseType}"
+        summaryErrorText.text =
+            "Last Error: ${SessionSummaryStore.lastError}"
     }
 
     private fun formatCount(value: Int): String {
