@@ -116,6 +116,8 @@ class MainActivity : AppCompatActivity() {
         clearLogsButton = findViewById(R.id.clearLogsButton)
         refreshButton = findViewById(R.id.refreshButton)
 
+        manualCommandInput.setText(appSettingsStore.getLastManualCommand())
+
         registerReceiver(
             usbReceiver,
             IntentFilter(ACTION_USB_PERMISSION),
@@ -218,6 +220,8 @@ class MainActivity : AppCompatActivity() {
             manualCommandResponseText.text = "Enter a command first"
             return
         }
+
+        appSettingsStore.setLastManualCommand(rawInput)
 
         val systemUsbManager = getSystemService(USB_SERVICE) as UsbManager
         val tactrixDevice = systemUsbManager.deviceList.values.firstOrNull {
