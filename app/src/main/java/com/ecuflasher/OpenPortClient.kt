@@ -8,11 +8,6 @@ class OpenPortClient(
     private val endpointIn: UsbEndpoint
 ) {
 
-    companion object {
-        private const val READ_TIMEOUT_MS = 4000
-        private const val WRITE_TIMEOUT_MS = 3000
-    }
-
     data class CommandResult(
         val bytesSent: Int,
         val bytesReceived: Int,
@@ -22,23 +17,23 @@ class OpenPortClient(
     )
 
     fun openCommandChannel(): CommandResult {
-        SessionSummaryStore.setOpenPortCommand("ATA")
+        SessionSummaryStore.setOpenPortCommand(OpenPortConstants.SESSION_OPENPORT_COMMAND_ATA)
         return sendAsciiCommand(
             commandLabel = "OpenPort ATA command",
-            commandString = "ata\r\n"
+            commandString = OpenPortConstants.COMMAND_ATA
         )
     }
 
     fun openCanBus500k(): CommandResult {
-        SessionSummaryStore.setBusMode("CAN 500k")
+        SessionSummaryStore.setBusMode(OpenPortConstants.SESSION_BUS_MODE_CAN_500K)
         return sendAsciiCommand(
             commandLabel = "OpenPort ATO CAN command",
-            commandString = "ato6 0 500000 0\r\n"
+            commandString = OpenPortConstants.COMMAND_ATO_CAN_500K
         )
     }
 
     fun sendObdCanQuery0100(): CommandResult {
-        SessionSummaryStore.setEcuQuery("OBD Mode 01 PID 00")
+        SessionSummaryStore.setEcuQuery(OpenPortConstants.SESSION_ECU_QUERY_MODE_01_PID_00)
 
         val canFrame = byteArrayOf(
             0x00, 0x00, 0x07, 0xDF.toByte(),
@@ -57,14 +52,14 @@ class OpenPortClient(
         EcuLogger.usb("CAN frame hex: ${toHex(canFrame)}")
         EcuLogger.usb("Packet length: ${packet.size}")
         EcuLogger.usb("Packet hex: ${toHex(packet)}")
-        EcuLogger.usb("Write timeout ms: $WRITE_TIMEOUT_MS")
-        EcuLogger.usb("Read timeout ms: $READ_TIMEOUT_MS")
+        EcuLogger.usb("Write timeout ms: ${OpenPortConstants.WRITE_TIMEOUT_MS}")
+        EcuLogger.usb("Read timeout ms: ${OpenPortConstants.READ_TIMEOUT_MS}")
 
         val sent = connection.bulkTransfer(
             endpointOut,
             packet,
             packet.size,
-            WRITE_TIMEOUT_MS
+            OpenPortConstants.WRITE_TIMEOUT_MS
         )
 
         EcuLogger.usb("Bytes sent: $sent")
@@ -74,7 +69,7 @@ class OpenPortClient(
             endpointIn,
             buffer,
             buffer.size,
-            READ_TIMEOUT_MS
+            OpenPortConstants.READ_TIMEOUT_MS
         )
 
         EcuLogger.usb("Bytes received: $received")
@@ -131,14 +126,14 @@ class OpenPortClient(
         EcuLogger.usb("Command text: ${commandString.replace("\r", "\\r").replace("\n", "\\n")}")
         EcuLogger.usb("Packet length: ${packet.size}")
         EcuLogger.usb("Packet hex: ${toHex(packet)}")
-        EcuLogger.usb("Write timeout ms: $WRITE_TIMEOUT_MS")
-        EcuLogger.usb("Read timeout ms: $READ_TIMEOUT_MS")
+        EcuLogger.usb("Write timeout ms: ${OpenPortConstants.WRITE_TIMEOUT_MS}")
+        EcuLogger.usb("Read timeout ms: ${OpenPortConstants.READ_TIMEOUT_MS}")
 
         val sent = connection.bulkTransfer(
             endpointOut,
             packet,
             packet.size,
-            WRITE_TIMEOUT_MS
+            OpenPortConstants.WRITE_TIMEOUT_MS
         )
 
         EcuLogger.usb("Bytes sent: $sent")
@@ -148,7 +143,7 @@ class OpenPortClient(
             endpointIn,
             buffer,
             buffer.size,
-            READ_TIMEOUT_MS
+            OpenPortConstants.READ_TIMEOUT_MS
         )
 
         EcuLogger.usb("Bytes received: $received")

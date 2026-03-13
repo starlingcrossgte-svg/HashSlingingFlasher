@@ -11,8 +11,8 @@ import android.hardware.usb.UsbManager
 class UsbTransport(private val context: Context) {
 
     companion object {
-        const val TACTRIX_VENDOR_ID = 1027
-        const val TACTRIX_PRODUCT_ID = 52301
+        const val TACTRIX_VENDOR_ID = OpenPortConstants.TACTRIX_VENDOR_ID
+        const val TACTRIX_PRODUCT_ID = OpenPortConstants.TACTRIX_PRODUCT_ID
     }
 
     private val usbManager: UsbManager =
@@ -30,8 +30,8 @@ class UsbTransport(private val context: Context) {
         val deviceList = usbManager.deviceList
 
         for (device in deviceList.values) {
-            if (device.vendorId == TACTRIX_VENDOR_ID &&
-                device.productId == TACTRIX_PRODUCT_ID
+            if (device.vendorId == OpenPortConstants.TACTRIX_VENDOR_ID &&
+                device.productId == OpenPortConstants.TACTRIX_PRODUCT_ID
             ) {
                 EcuLogger.usb("Opening Tactrix connection")
 
