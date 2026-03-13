@@ -31,11 +31,7 @@ class MainActivity : AppCompatActivity() {
                     val manager = UsbDeviceManager(this@MainActivity)
                     val result = manager.openTactrixChannel()
 
-                    statusText.text = if (result) {
-                        "Tactrix communication test complete"
-                    } else {
-                        "Tactrix communication test failed"
-                    }
+                    statusText.text = buildStatusText(result)
                 } else {
                     EcuLogger.usb("USB permission denied")
                     statusText.text = "USB permission denied"
@@ -99,10 +95,18 @@ class MainActivity : AppCompatActivity() {
         val manager = UsbDeviceManager(this)
         val result = manager.openTactrixChannel()
 
-        statusText.text = if (result) {
-            "Tactrix communication test complete"
+        statusText.text = buildStatusText(result)
+    }
+
+    private fun buildStatusText(result: TactrixTestResult): String {
+        return if (result.success) {
+            if (result.responseHex.isNotEmpty()) {
+                "${result.statusMessage}\nSent: ${result.bytesSent}\nReceived: ${result.bytesReceived}\nResponse: ${result.responseHex}"
+            } else {
+                "${result.statusMessage}\nSent: ${result.bytesSent}\nReceived: ${result.bytesReceived}"
+            }
         } else {
-            "Tactrix communication test failed"
+            result.statusMessage
         }
     }
 }
