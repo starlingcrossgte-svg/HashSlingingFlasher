@@ -107,9 +107,10 @@ class UsbDeviceManager(private val context: Context) {
                 EcuLogger.usb("Bulk OUT endpoint address: ${endpointOut.address}")
                 EcuLogger.usb("Bulk IN endpoint address: ${endpointIn.address}")
 
-                val testPacket = byteArrayOf(0x00)
-                EcuLogger.usb("Sending test packet")
-                EcuLogger.usb("Test packet hex: 00")
+                val testPacket = buildTransportTestPacket()
+                EcuLogger.usb("Sending transport test packet")
+                EcuLogger.usb("Test packet length: ${testPacket.size}")
+                EcuLogger.usb("Test packet hex: ${toHex(testPacket)}")
 
                 val sent = connection.bulkTransfer(
                     endpointOut,
@@ -131,8 +132,9 @@ class UsbDeviceManager(private val context: Context) {
                 EcuLogger.usb("Bytes received: $received")
 
                 val responseHex = if (received > 0) {
-                    buffer.copyOf(received)
-                        .joinToString(" ") { byte -> "%02X".format(byte.toInt() and 0xFF) }
+                    buffer.copyOf(received).joinToString(" ") {
+                        "%02X".format(it.toInt() and 0xFF)
+                    }
                 } else {
                     ""
                 }
@@ -171,6 +173,16 @@ class UsbDeviceManager(private val context: Context) {
             bytesReceived = -1,
             responseHex = ""
         )
+    }
+
+    private fun buildTransportTestPacket(): ByteArray {
+        return byteArrayOf(0x00)
+    }
+
+    private fun toHex(data: ByteArray): String {
+        return data.joinToString(" ") {
+            "%02X".format(it.toInt() and 0xFF)
+        }
     }
 
     private fun findBulkCommunicationInterface(device: UsbDevice): UsbInterface? {
