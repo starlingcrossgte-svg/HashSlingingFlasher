@@ -21,8 +21,6 @@ class MainActivity : AppCompatActivity() {
 
     private val ACTION_USB_PERMISSION = "com.ecuflasher.USB_PERMISSION"
 
-    private lateinit var appSettingsStore: AppSettingsStore
-
     private lateinit var developerModeStatusText: TextView
     private lateinit var toggleDeveloperModeButton: Button
 
@@ -30,6 +28,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var sessionSummaryPanel: LinearLayout
     private lateinit var manualCommandPanel: LinearLayout
     private lateinit var liveLogPanel: LinearLayout
+    private lateinit var canSnifferPanel: LinearLayout
 
     private lateinit var statusMessageText: TextView
     private lateinit var deviceStateText: TextView
@@ -54,12 +53,19 @@ class MainActivity : AppCompatActivity() {
     private lateinit var clearLogsButton: Button
     private lateinit var refreshButton: Button
 
+    private lateinit var btnStartSniffer: Button
+    private lateinit var btnStopSniffer: Button
+    private lateinit var btnClearSniffer: Button
+    private lateinit var canSnifferOutput: TextView
+
     private val manualCommandPresets = listOf(
         "Custom",
         "ati\\r\\n",
         "ata\\r\\n",
         "ato6 0 500000 0\\r\\n"
     )
+
+    private var canSnifferRunning = false
 
     private val usbReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -90,10 +96,6 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         AppContextHolder.context = applicationContext
-        appSettingsStore = AppSettingsStore(this)
-
-        DeveloperModeStore.setEnabled(appSettingsStore.isDeveloperModeEnabled())
-
         setContentView(R.layout.activity_main)
 
         developerModeStatusText = findViewById(R.id.developerModeStatusText)
@@ -103,6 +105,7 @@ class MainActivity : AppCompatActivity() {
         sessionSummaryPanel = findViewById(R.id.sessionSummaryPanel)
         manualCommandPanel = findViewById(R.id.manualCommandPanel)
         liveLogPanel = findViewById(R.id.liveLogPanel)
+        canSnifferPanel = findViewById(R.id.canSnifferPanel)
 
         statusMessageText = findViewById(R.id.statusMessageText)
         deviceStateText = findViewById(R.id.deviceStateText)
@@ -127,8 +130,12 @@ class MainActivity : AppCompatActivity() {
         clearLogsButton = findViewById(R.id.clearLogsButton)
         refreshButton = findViewById(R.id.refreshButton)
 
-        setupManualCommandPresetSpinner()
+        btnStartSniffer = findViewById(R.id.btnStartSniffer)
+        btnStopSniffer = findViewById(R.id.btnStopSniffer)
+        btnClearSniffer = findViewById(R.id.btnClearSniffer)
+        canSnifferOutput = findViewById(R.id.canSnifferOutput)
 
+        setupManualCommandPresetSpinner()
 
         registerReceiver(
             usbReceiver,
@@ -152,11 +159,22 @@ class MainActivity : AppCompatActivity() {
 
         toggleDeveloperModeButton.setOnClickListener {
             DeveloperModeStore.toggle()
-            appSettingsStore.setDeveloperModeEnabled(DeveloperModeStore.enabled)
             refreshDeveloperModeUi()
         }
 
-        EcuLogger.main("ECUFlasher started")
+        btnStartSniffer.setOnClickListener {
+            startCanSniffer()
+        }
+
+        btnStopSniffer.setOnClickListener {
+            stopCanSniffer()
+        }
+
+        btnClearSniffer.setOnClickListener {
+            canSnifferOutput.text = "No CAN frames captured yet"
+        }
+
+        EcuLogger.main("HashSlingingFlasher started")
         refreshDeveloperModeUi()
         refreshLiveLog()
         refreshSessionSummary()
@@ -262,7 +280,6 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-
         val systemUsbManager = getSystemService(USB_SERVICE) as UsbManager
         val tactrixDevice = systemUsbManager.deviceList.values.firstOrNull {
             it.vendorId == UsbTransport.TACTRIX_VENDOR_ID &&
@@ -311,6 +328,19 @@ class MainActivity : AppCompatActivity() {
         refreshSessionSummary()
     }
 
+    private fun startCanSniffer() {
+        canSnifferRunning = true
+        canSnifferOutput.text = buildString {
+            append("[CAN] Sniffer started\n")
+            append("[CAN] Waiting for frames...\n")
+        }
+    }
+
+    private fun stopCanSniffer() {
+        canSnifferRunning = false
+        canSnifferOutput.append("\n[CAN] Sniffer stopped")
+    }
+
     private fun renderResult(result: TactrixTestResult) {
         statusMessageText.text = result.statusMessage
         lastCommandText.text = "Last Command: USB Refresh/Test Run"
@@ -337,6 +367,7 @@ class MainActivity : AppCompatActivity() {
         sessionSummaryPanel.visibility = visibility
         manualCommandPanel.visibility = visibility
         liveLogPanel.visibility = visibility
+        canSnifferPanel.visibility = visibility
     }
 
     private fun refreshLiveLog() {

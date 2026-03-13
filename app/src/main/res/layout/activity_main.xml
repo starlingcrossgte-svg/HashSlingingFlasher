@@ -267,7 +267,7 @@
                 android:id="@+id/manualCommandInput"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Enter OpenPort command, example: ati\\r\\n"
+                android:hint="Enter OpenPort command, example: ati\r\n"
                 android:textSize="15sp"
                 android:textColor="#222222"
                 android:background="#F0F0F0"
@@ -336,6 +336,65 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="CLEAR LOGS" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/canSnifferPanel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="#FFFFFF"
+            android:padding="16dp"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="CAN Bus Sniffer"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="#666666"
+                android:layout_marginBottom="12dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="12dp">
+
+                <Button
+                    android:id="@+id/btnStartSniffer"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="START" />
+
+                <Button
+                    android:id="@+id/btnStopSniffer"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="STOP" />
+
+                <Button
+                    android:id="@+id/btnClearSniffer"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="CLEAR" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/canSnifferOutput"
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                android:text="No CAN frames captured yet"
+                android:textSize="13sp"
+                android:textColor="#222222"
+                android:background="#F0F0F0"
+                android:padding="12dp"
+                android:typeface="monospace"
+                android:scrollbars="vertical" />
         </LinearLayout>
 
         <Button
