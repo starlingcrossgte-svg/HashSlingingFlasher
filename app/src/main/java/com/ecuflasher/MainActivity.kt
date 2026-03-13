@@ -19,6 +19,8 @@ class MainActivity : AppCompatActivity() {
 
     private val ACTION_USB_PERMISSION = "com.ecuflasher.USB_PERMISSION"
 
+    private lateinit var appSettingsStore: AppSettingsStore
+
     private lateinit var developerModeStatusText: TextView
     private lateinit var toggleDeveloperModeButton: Button
 
@@ -78,6 +80,9 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         AppContextHolder.context = applicationContext
+        appSettingsStore = AppSettingsStore(this)
+
+        DeveloperModeStore.setEnabled(appSettingsStore.isDeveloperModeEnabled())
 
         setContentView(R.layout.activity_main)
 
@@ -133,6 +138,7 @@ class MainActivity : AppCompatActivity() {
 
         toggleDeveloperModeButton.setOnClickListener {
             DeveloperModeStore.toggle()
+            appSettingsStore.setDeveloperModeEnabled(DeveloperModeStore.enabled)
             refreshDeveloperModeUi()
         }
 
