@@ -40,39 +40,21 @@ class UsbDeviceManager(private val context: Context) {
                 val connection = usbManager.openDevice(device)
                 if (connection == null) {
                     EcuLogger.error("Failed to open Tactrix USB device")
-                    return TactrixTestResult(
-                        false,
-                        "Failed to open Tactrix USB device",
-                        -1,
-                        -1,
-                        ""
-                    )
+                    return TactrixTestResult(false, "Failed to open Tactrix USB device", -1, -1, "")
                 }
 
                 val usbInterface = findBulkCommunicationInterface(device)
                 if (usbInterface == null) {
                     EcuLogger.error("No bulk communication interface found")
                     connection.close()
-                    return TactrixTestResult(
-                        false,
-                        "No bulk communication interface found",
-                        -1,
-                        -1,
-                        ""
-                    )
+                    return TactrixTestResult(false, "No bulk communication interface found", -1, -1, "")
                 }
 
                 val claimed = connection.claimInterface(usbInterface, true)
                 if (!claimed) {
                     EcuLogger.error("Failed to claim Tactrix interface")
                     connection.close()
-                    return TactrixTestResult(
-                        false,
-                        "Failed to claim Tactrix interface",
-                        -1,
-                        -1,
-                        ""
-                    )
+                    return TactrixTestResult(false, "Failed to claim Tactrix interface", -1, -1, "")
                 }
 
                 EcuLogger.usb("Tactrix interface claimed successfully")
@@ -84,13 +66,7 @@ class UsbDeviceManager(private val context: Context) {
                     EcuLogger.error("Bulk endpoints not found")
                     connection.releaseInterface(usbInterface)
                     connection.close()
-                    return TactrixTestResult(
-                        false,
-                        "Bulk endpoints not found",
-                        -1,
-                        -1,
-                        ""
-                    )
+                    return TactrixTestResult(false, "Bulk endpoints not found", -1, -1, "")
                 }
 
                 EcuLogger.usb("Bulk OUT endpoint address: ${endpointOut.address}")
@@ -111,7 +87,7 @@ class UsbDeviceManager(private val context: Context) {
 
                     return TactrixTestResult(
                         false,
-                        "OpenPort ATA command failed before bus open",
+                        "OpenPort ATA command failed before CAN bus open",
                         initResult.bytesSent,
                         initResult.bytesReceived,
                         initResult.responseHex
@@ -122,8 +98,8 @@ class UsbDeviceManager(private val context: Context) {
                     connection = connection,
                     endpointOut = endpointOut,
                     endpointIn = endpointIn,
-                    commandLabel = "OpenPort ATO command",
-                    commandString = "ato4 0 10400 0\r\n"
+                    commandLabel = "OpenPort ATO CAN command",
+                    commandString = "ato6 0 500000 0\r\n"
                 )
 
                 connection.releaseInterface(usbInterface)
@@ -135,9 +111,9 @@ class UsbDeviceManager(private val context: Context) {
                 return TactrixTestResult(
                     success = success,
                     statusMessage = if (success) {
-                        "OpenPort bus open command responded"
+                        "OpenPort CAN bus open command responded"
                     } else {
-                        "OpenPort bus open command sent but no valid response"
+                        "OpenPort CAN bus open command sent but no valid response"
                     },
                     bytesSent = busResult.bytesSent,
                     bytesReceived = busResult.bytesReceived,
@@ -147,13 +123,7 @@ class UsbDeviceManager(private val context: Context) {
         }
 
         EcuLogger.usb("Tactrix device not found")
-        return TactrixTestResult(
-            false,
-            "Tactrix device not detected",
-            -1,
-            -1,
-            ""
-        )
+        return TactrixTestResult(false, "Tactrix device not detected", -1, -1, "")
     }
 
     private data class CommandResult(
