@@ -1,62 +1,62 @@
 # ECUFlasher-Pro
 
-ECUFlasher-Pro is an experimental Android application designed to interact with automotive ECUs directly from a mobile device.
+ECUFlasher-Pro is an experimental Android application designed to communicate with automotive ECUs directly from a mobile device.
 
-The long-term goal is to allow users to read ECU data, log parameters, edit ROM files, and eventually flash ECUs directly from an Android phone using a USB interface such as the Tactrix OpenPort 2.0.
-
-This project is currently in early development and is focused on building a stable Android foundation before implementing full ECU communication features.
-
----
-
-## Project Goals
-
-- Mobile ECU diagnostics  
-- ECU ROM reading  
-- Live data logging  
-- ROM editing support  
-- ECU flashing from Android devices  
-- Support for professional interfaces like Tactrix OpenPort  
-
----
+This project is focused on building a clean Android-first communication stack for professional vehicle interfaces such as the Tactrix OpenPort 2.0, without relying on the traditional PC-based driver workflow.
 
 ## Current Status
 
-The Android application environment is successfully running and building through GitHub Actions.
+Confirmed milestones:
 
-**Current focus:**
+- Android USB Host communication with Tactrix OpenPort 2.0
+- Direct OpenPort firmware command communication
+- OpenPort command channel confirmed with:
+  - `ati`
+  - `ata`
+  - `ato6 0 500000 0`
+- CAN bus open confirmed on a 2006 Subaru Outback 3.0R
+- Raw vehicle-side response observed during first ECU query testing
 
-- Application structure  
-- UI development  
-- USB communication layer  
-- ECU protocol research  
+Current focus:
 
----
+- stabilizing the communication pipeline
+- improving protocol separation
+- implementing clean ECU response parsing
+- preparing for safe bench ECU development
+
+## Project Goals
+
+- mobile ECU diagnostics
+- live data logging
+- ECU identification
+- ROM reading
+- ROM flashing from Android devices
+- support for professional USB vehicle interfaces
+
+## Development Direction
+
+The long-term architecture is being built in layers:
+
+- USB transport layer
+- OpenPort command layer
+- CAN / vehicle transport layer
+- ECU protocol layer
+- ROM read / flash layer
+
+The current development priority is building a stable communication foundation before advancing to full ECU interaction.
 
 ## Development Environment
 
-This project is being developed in an unconventional mobile-first workflow: Termux on Android devices is used for building, committing, and testing APKs.
-
----
+This project is being developed in a mobile-first workflow using Android devices, Termux, GitHub, and GitHub Actions.
 
 ## License
 
-ECUFlasher-Pro is released under the **GNU General Public License v3.0 (GPLv3)**.  
+ECUFlasher-Pro is released under the GNU General Public License v3.0 (GPLv3).
 
-You are free to:
-
-- **Use** the software for any purpose  
-- **Study** the source code  
-- **Modify** the software  
-- **Distribute** copies, including your modified versions  
-
-As per GPLv3, any derivative works must also be released under the same license, and credit must be given to **Cross Starling** as the original author.
-
-For full license text, see [LICENSE](LICENSE) file included in this repository.
-
----
+See the `LICENSE` file for full details.
 
 ## Author
 
-**Cross Starling**  
+Cross Starling
 
-*This project is in early development — use responsibly and at your own risk.*
+This project is in active early development and should be treated as experimental.
