@@ -112,6 +112,8 @@ class MainActivity : AppCompatActivity() {
             refreshDeveloperLog()
         }
 
+        developerModeEnabled = false
+        developerModeStatusText.text = "Developer Mode: OFF"
         setDeveloperPanelsVisible(false)
 
         EcuLogger.main("HashSlingingFlasher started")
@@ -163,10 +165,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun buildStatusText(result: TactrixTestResult): String {
-        return if (result.success) {
-            result.statusMessage
-        } else {
-            result.statusMessage
-        }
+        return result.statusMessage
     }
 }
