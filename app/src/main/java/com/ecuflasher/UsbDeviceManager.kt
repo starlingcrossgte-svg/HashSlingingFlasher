@@ -1,14 +1,12 @@
 package com.ecuflasher
 
 import android.content.Context
-import android.hardware.usb.UsbConstants
-import android.hardware.usb.UsbDevice
-import android.hardware.usb.UsbDeviceConnection
-import android.hardware.usb.UsbEndpoint
-import android.hardware.usb.UsbInterface
-import android.hardware.usb.UsbManager
+import android.hardware.usb.*
 
-data class TactrixTestResult(val success: Boolean, val statusMessage: String)
+data class TactrixTestResult(
+    val success: Boolean,
+    val statusMessage: String
+)
 
 class UsbDeviceManager(private val context: Context) {
 
@@ -23,14 +21,12 @@ class UsbDeviceManager(private val context: Context) {
             it.vendorId == TACTRIX_VENDOR_ID && it.productId == TACTRIX_PRODUCT_ID
         }
 
-        if (tactrixDevice == null) {
+        if (tactrixDevice == null)
             return TactrixTestResult(false, "No Tactrix device detected")
-        }
 
         val connection: UsbDeviceConnection? = usbManager.openDevice(tactrixDevice)
-        if (connection == null) {
+        if (connection == null)
             return TactrixTestResult(false, "Failed to open Tactrix USB device (permission?)")
-        }
 
         val usbInterface: UsbInterface? = tactrixDevice.getInterface(0)
         if (usbInterface == null) {
