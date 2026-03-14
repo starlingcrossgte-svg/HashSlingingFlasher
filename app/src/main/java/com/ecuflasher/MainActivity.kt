@@ -64,13 +64,13 @@ class MainActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_main)
 
-        statusText = findViewById(R.id.usbStatusText)
+        statusText = findViewById(R.id.statusMessageText)
         refreshButton = findViewById(R.id.refreshButton)
 
         developerModeStatusText = findViewById(R.id.developerModeStatusText)
-        developerToolsPanel = findViewById(R.id.developerToolsPanel)
+        developerToolsPanel = findViewById(R.id.liveLogPanel)
         toggleDeveloperModeButton = findViewById(R.id.toggleDeveloperModeButton)
-        developerLogText = findViewById(R.id.developerLogText)
+        developerLogText = findViewById(R.id.liveLogText)
 
         registerReceiver(
             usbReceiver,
