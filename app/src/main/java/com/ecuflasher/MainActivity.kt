@@ -9,8 +9,8 @@ import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
 import android.os.Bundle
 import android.widget.Button
-import android.widget.TextView
 import android.widget.LinearLayout
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 
 class MainActivity : AppCompatActivity() {
@@ -23,8 +23,13 @@ class MainActivity : AppCompatActivity() {
     private lateinit var developerModeStatusText: TextView
     private lateinit var developerToolsPanel: LinearLayout
     private lateinit var toggleDeveloperModeButton: Button
+    private lateinit var developerLogText: TextView
 
     private var developerModeEnabled = false
+
+    private fun refreshDeveloperLog() {
+        developerLogText.text = EcuLogger.getLogs()
+    }
 
     private val usbReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -41,11 +46,13 @@ class MainActivity : AppCompatActivity() {
                     val result = manager.openTactrixChannel()
 
                     statusText.text = buildStatusText(result)
+                    refreshDeveloperLog()
 
                 } else {
 
                     EcuLogger.usb("USB permission denied")
                     statusText.text = "USB permission denied"
+                    refreshDeveloperLog()
 
                 }
             }
@@ -63,6 +70,7 @@ class MainActivity : AppCompatActivity() {
         developerModeStatusText = findViewById(R.id.developerModeStatusText)
         developerToolsPanel = findViewById(R.id.developerToolsPanel)
         toggleDeveloperModeButton = findViewById(R.id.toggleDeveloperModeButton)
+        developerLogText = findViewById(R.id.developerLogText)
 
         registerReceiver(
             usbReceiver,
@@ -72,6 +80,7 @@ class MainActivity : AppCompatActivity() {
 
         refreshButton.setOnClickListener {
             checkTactrix()
+            refreshDeveloperLog()
         }
 
         toggleDeveloperModeButton.setOnClickListener {
@@ -84,6 +93,7 @@ class MainActivity : AppCompatActivity() {
                 developerToolsPanel.visibility = LinearLayout.VISIBLE
 
                 EcuLogger.main("Developer mode enabled")
+                refreshDeveloperLog()
 
             } else {
 
@@ -91,6 +101,7 @@ class MainActivity : AppCompatActivity() {
                 developerToolsPanel.visibility = LinearLayout.GONE
 
                 EcuLogger.main("Developer mode disabled")
+                refreshDeveloperLog()
 
             }
         }
@@ -98,6 +109,7 @@ class MainActivity : AppCompatActivity() {
         developerToolsPanel.visibility = LinearLayout.GONE
 
         EcuLogger.main("HashSlingingFlasher started")
+        refreshDeveloperLog()
     }
 
     override fun onDestroy() {
@@ -110,15 +122,14 @@ class MainActivity : AppCompatActivity() {
         val systemUsbManager = getSystemService(USB_SERVICE) as UsbManager
 
         val tactrixDevice = systemUsbManager.deviceList.values.firstOrNull {
-
             it.vendorId == 1027 && it.productId == 52301
-
         }
 
         if (tactrixDevice == null) {
 
             EcuLogger.usb("Tactrix device not found")
             statusText.text = "Tactrix device not detected"
+            refreshDeveloperLog()
             return
 
         }
@@ -136,6 +147,7 @@ class MainActivity : AppCompatActivity() {
 
             EcuLogger.usb("Requested USB permission for Tactrix")
             statusText.text = "Requesting USB permission..."
+            refreshDeveloperLog()
 
             return
         }
@@ -144,7 +156,7 @@ class MainActivity : AppCompatActivity() {
         val result = manager.openTactrixChannel()
 
         statusText.text = buildStatusText(result)
-
+        refreshDeveloperLog()
     }
 
     private fun buildStatusText(result: TactrixTestResult): String {
@@ -152,13 +164,9 @@ class MainActivity : AppCompatActivity() {
         return if (result.success) {
 
             if (result.responseHex.isNotEmpty()) {
-
                 "${result.statusMessage}\nSent: ${result.bytesSent}\nReceived: ${result.responseHex}"
-
             } else {
-
                 "${result.statusMessage}\nSent: ${result.bytesSent}\nReceived: ${result.bytesReceived}"
-
             }
 
         } else {
@@ -166,6 +174,5 @@ class MainActivity : AppCompatActivity() {
             result.statusMessage
 
         }
-
     }
 }
