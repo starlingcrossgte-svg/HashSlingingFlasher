@@ -12,40 +12,15 @@ object EcuLogger {
     private val logBuffer = StringBuilder()
 
     private fun append(tag: String, message: String) {
-        val line = "[$tag] $message\n"
-        logBuffer.append(line)
+        logBuffer.append("[$tag] $message\n")
     }
 
-    fun getLogs(): String {
-        return logBuffer.toString()
-    }
+    fun getLogs(): String = logBuffer.toString()
+    fun clear() = logBuffer.clear()
 
-    fun clear() {
-        logBuffer.clear()
-    }
-
-    fun main(message: String) {
-        Log.d(TAG_MAIN, message)
-        append(TAG_MAIN, message)
-    }
-
-    fun usb(message: String) {
-        Log.d(TAG_USB, message)
-        append(TAG_USB, message)
-    }
-
-    fun comm(message: String) {
-        Log.d(TAG_COMM, message)
-        append(TAG_COMM, message)
-    }
-
-    fun flash(message: String) {
-        Log.d(TAG_FLASH, message)
-        append(TAG_FLASH, message)
-    }
-
-    fun error(message: String) {
-        Log.e("ECU_ERROR", message)
-        append("ERROR", message)
-    }
+    fun main(message: String) { Log.d(TAG_MAIN, message); append(TAG_MAIN, message) }
+    fun usb(message: String) { Log.d(TAG_USB, message); append(TAG_USB, message) }
+    fun comm(message: String) { Log.d(TAG_COMM, message); append(TAG_COMM, message) }
+    fun flash(message: String) { Log.d(TAG_FLASH, message); append(TAG_FLASH, message) }
+    fun error(message: String) { Log.e("ECU_ERROR", message); append("ERROR", message) }
 }

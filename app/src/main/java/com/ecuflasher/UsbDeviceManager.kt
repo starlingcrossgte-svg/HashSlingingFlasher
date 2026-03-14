@@ -1,12 +1,14 @@
 package com.ecuflasher
 
 import android.content.Context
-import android.hardware.usb.*
+import android.hardware.usb.UsbConstants
+import android.hardware.usb.UsbDevice
+import android.hardware.usb.UsbDeviceConnection
+import android.hardware.usb.UsbEndpoint
+import android.hardware.usb.UsbInterface
+import android.hardware.usb.UsbManager
 
-data class TactrixTestResult(
-    val success: Boolean,
-    val statusMessage: String
-)
+data class TactrixTestResult(val success: Boolean, val statusMessage: String)
 
 class UsbDeviceManager(private val context: Context) {
 
@@ -16,37 +18,27 @@ class UsbDeviceManager(private val context: Context) {
     private val WRITE_TIMEOUT_MS = 3000
 
     fun openTactrixChannel(): TactrixTestResult {
-
         val usbManager = context.getSystemService(Context.USB_SERVICE) as UsbManager
-
-        val tactrixDevice: UsbDevice? =
-            usbManager.deviceList.values.firstOrNull {
-                it.vendorId == TACTRIX_VENDOR_ID &&
-                it.productId == TACTRIX_PRODUCT_ID
-            }
+        val tactrixDevice: UsbDevice? = usbManager.deviceList.values.firstOrNull {
+            it.vendorId == TACTRIX_VENDOR_ID && it.productId == TACTRIX_PRODUCT_ID
+        }
 
         if (tactrixDevice == null) {
             return TactrixTestResult(false, "No Tactrix device detected")
         }
 
         val connection: UsbDeviceConnection? = usbManager.openDevice(tactrixDevice)
-
         if (connection == null) {
-            return TactrixTestResult(
-                false,
-                "Failed to open Tactrix USB device (permission?)"
-            )
+            return TactrixTestResult(false, "Failed to open Tactrix USB device (permission?)")
         }
 
         val usbInterface: UsbInterface? = tactrixDevice.getInterface(0)
-
         if (usbInterface == null) {
             connection.close()
             return TactrixTestResult(false, "No USB interface found")
         }
 
         val claimed = connection.claimInterface(usbInterface, true)
-
         if (!claimed) {
             connection.close()
             return TactrixTestResult(false, "Failed to claim interface")
@@ -56,16 +48,9 @@ class UsbDeviceManager(private val context: Context) {
         var endpointIn: UsbEndpoint? = null
 
         for (i in 0 until usbInterface.endpointCount) {
-
             val endpoint = usbInterface.getEndpoint(i)
-
-            if (endpoint.direction == UsbConstants.USB_DIR_OUT) {
-                endpointOut = endpoint
-            }
-
-            if (endpoint.direction == UsbConstants.USB_DIR_IN) {
-                endpointIn = endpoint
-            }
+            if (endpoint.direction == UsbConstants.USB_DIR_OUT) endpointOut = endpoint
+            if (endpoint.direction == UsbConstants.USB_DIR_IN) endpointIn = endpoint
         }
 
         if (endpointOut == null || endpointIn == null) {
@@ -76,10 +61,6 @@ class UsbDeviceManager(private val context: Context) {
 
         connection.releaseInterface(usbInterface)
         connection.close()
-
-        return TactrixTestResult(
-            true,
-            "Tactrix USB interface opened successfully"
-        )
+        return TactrixTestResult(true, "Tactrix USB interface opened successfully")
     }
 }
