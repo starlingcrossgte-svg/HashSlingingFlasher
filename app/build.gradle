@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace 'com.ecuflasher'
+    namespace 'com.hashslingingflasher'
     compileSdk 34
 
     defaultConfig {
-        applicationId "com.ecuflasher"
+        applicationId "com.hashslingingflasher"
         minSdk 24
         targetSdk 34
         versionCode 1
