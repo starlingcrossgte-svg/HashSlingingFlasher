@@ -133,7 +133,7 @@ class UsbDeviceManager(private val context: Context) {
                     statusMessage = if (success) {
                         "ECU response received"
                     } else if (ecuResult.bytesReceived > 0) {
-                        "Raw vehicle response received"
+                        "OpenPort response received"
                     } else {
                         "ECU query sent but no response"
                     },
