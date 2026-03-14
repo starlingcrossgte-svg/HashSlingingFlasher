@@ -8,7 +8,6 @@ import android.content.IntentFilter
 import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
 import android.os.Bundle
-import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 
@@ -21,15 +20,95 @@ class MainActivity : AppCompatActivity() {
     private lateinit var statusText: TextView
     private lateinit var refreshButton: Button
 
+    private lateinit var developerModeStatusText: TextView
+    private lateinit var debugDetailsPanel: LinearLayout
+    private lateinit var sessionSummaryPanel: LinearLayout
+    private lateinit var manualCommandPanel: LinearLayout
+    private lateinit var developerToolsPanel: LinearLayout
+
+    private lateinit var deviceStateText: TextView
+    private lateinit var permissionStateText: TextView
     private lateinit var lastCommandText: TextView
     private lateinit var bytesSentText: TextView
     private lateinit var bytesReceivedText: TextView
     private lateinit var responseHexText: TextView
+
+    private lateinit var toggleDeveloperModeButton: Button
+    private lateinit var developerLogText: TextView
+    private lateinit var clearLogsButton: Button
+
+    private lateinit var manualCommandPresetSpinner: Spinner
     private lateinit var manualCommandInput: EditText
     private lateinit var sendManualCommandButton: Button
     private lateinit var manualCommandResponseText: TextView
 
-    private lateinit var persistentSession: UsbPersistentSession
+    private var developerModeEnabled = false
+
+    private var lastCommand = "None"
+    private var bytesSent = "-"
+    private var bytesReceived = "-"
+    private var responseHex = "--"
+
+    private fun refreshDeveloperLog() {
+        developerLogText.text = EcuLogger.getLogs()
+    }
+
+    private fun setDeveloperPanelsVisible(visible: Boolean) {
+        val state = if (visible) LinearLayout.VISIBLE else LinearLayout.GONE
+        debugDetailsPanel.visibility = state
+        sessionSummaryPanel.visibility = state
+        manualCommandPanel.visibility = state
+        developerToolsPanel.visibility = state
+    }
+
+    private fun getTactrixDevice(systemUsbManager: UsbManager): UsbDevice? {
+        return systemUsbManager.deviceList.values.firstOrNull {
+            it.vendorId == TACTRIX_VENDOR_ID && it.productId == TACTRIX_PRODUCT_ID
+        }
+    }
+
+    private fun refreshDebugPanel() {
+        val systemUsbManager = getSystemService(USB_SERVICE) as UsbManager
+        val tactrixDevice = getTactrixDevice(systemUsbManager)
+
+        if (tactrixDevice == null) {
+            deviceStateText.text = "Device: Not detected"
+            permissionStateText.text = "Permission: Not applicable"
+        } else {
+            val permissionText = if (systemUsbManager.hasPermission(tactrixDevice)) {
+                "Granted"
+            } else {
+                "Not granted"
+            }
+            deviceStateText.text = "Device: Tactrix OpenPort detected"
+            permissionStateText.text = "Permission: $permissionText"
+        }
+
+        lastCommandText.text = "Last Command: $lastCommand"
+        bytesSentText.text = "Bytes Sent: $bytesSent"
+        bytesReceivedText.text = "Bytes Received: $bytesReceived"
+        responseHexText.text = "Response Hex: $responseHex"
+    }
+
+    private val usbReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action != ACTION_USB_PERMISSION) return
+
+            val granted = intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)
+            if (granted) {
+                EcuLogger.usb("USB permission granted")
+                val manager = UsbDeviceManager(this@MainActivity)
+                val result = manager.openTactrixChannel()
+                statusText.text = buildStatusText(result)
+            } else {
+                EcuLogger.usb("USB permission denied")
+                statusText.text = "USB permission denied"
+            }
+
+            refreshDeveloperLog()
+            refreshDebugPanel()
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,68 +117,61 @@ class MainActivity : AppCompatActivity() {
         statusText = findViewById(R.id.statusMessageText)
         refreshButton = findViewById(R.id.refreshButton)
 
+        developerModeStatusText = findViewById(R.id.developerModeStatusText)
+        debugDetailsPanel = findViewById(R.id.debugDetailsPanel)
+        sessionSummaryPanel = findViewById(R.id.sessionSummaryPanel)
+        manualCommandPanel = findViewById(R.id.manualCommandPanel)
+        developerToolsPanel = findViewById(R.id.liveLogPanel)
+
+        deviceStateText = findViewById(R.id.deviceStateText)
+        permissionStateText = findViewById(R.id.permissionStateText)
         lastCommandText = findViewById(R.id.lastCommandText)
         bytesSentText = findViewById(R.id.bytesSentText)
         bytesReceivedText = findViewById(R.id.bytesReceivedText)
         responseHexText = findViewById(R.id.responseHexText)
+
+        toggleDeveloperModeButton = findViewById(R.id.toggleDeveloperModeButton)
+        developerLogText = findViewById(R.id.liveLogText)
+        clearLogsButton = findViewById(R.id.clearLogsButton)
+
+        manualCommandPresetSpinner = findViewById(R.id.manualCommandPresetSpinner)
         manualCommandInput = findViewById(R.id.manualCommandInput)
         sendManualCommandButton = findViewById(R.id.sendManualCommandButton)
         manualCommandResponseText = findViewById(R.id.manualCommandResponseText)
 
-        refreshButton.setOnClickListener { checkTactrix() }
+        registerReceiver(
+            usbReceiver,
+            IntentFilter(ACTION_USB_PERMISSION),
+            Context.RECEIVER_NOT_EXPORTED
+        )
 
-        sendManualCommandButton.setOnClickListener {
-            val command = manualCommandInput.text.toString()
-            if (command.isEmpty()) {
-                manualCommandResponseText.text = "No command entered"
-                return@setOnClickListener
-            }
-
-            if (!::persistentSession.isInitialized || !persistentSession.sessionOpen) {
-                checkTactrix() // ensure session open
-            }
-
-            val result = persistentSession.sendAsciiCommand(command)
-            lastCommandText.text = "Last Command: $command"
-            bytesSentText.text = "Bytes Sent: ${result.bytesSent}"
-            bytesReceivedText.text = "Bytes Received: ${result.bytesReceived}"
-            responseHexText.text = "Response Hex: ${result.responseHex}"
-            manualCommandResponseText.text = result.responseAscii
+        refreshButton.setOnClickListener {
+            checkTactrix()
+            refreshDeveloperLog()
         }
-    }
 
-    private fun getTactrixDevice(manager: UsbManager): UsbDevice? {
-        return manager.deviceList.values.firstOrNull {
-            it.vendorId == TACTRIX_VENDOR_ID && it.productId == TACTRIX_PRODUCT_ID
+        toggleDeveloperModeButton.setOnClickListener {
+            developerModeEnabled = !developerModeEnabled
+            if (developerModeEnabled) {
+                developerModeStatusText.text = "Developer Mode: ON"
+                setDeveloperPanelsVisible(true)
+                EcuLogger.main("Developer mode enabled")
+            } else {
+                developerModeStatusText.text = "Developer Mode: OFF"
+                setDeveloperPanelsVisible(false)
+                EcuLogger.main("Developer mode disabled")
+            }
         }
     }
 
     private fun checkTactrix() {
-        val manager = getSystemService(USB_SERVICE) as UsbManager
-        val device = getTactrixDevice(manager)
-        if (device == null) {
-            statusText.text = "Tactrix not detected"
-            return
-        }
+        val manager = UsbDeviceManager(this)
+        val result = manager.openTactrixChannel()
+        statusText.text = buildStatusText(result)
+        refreshDebugPanel()
+    }
 
-        if (!manager.hasPermission(device)) {
-            val permissionIntent = PendingIntent.getBroadcast(
-                this, 0, Intent(ACTION_USB_PERMISSION), PendingIntent.FLAG_IMMUTABLE
-            )
-            manager.requestPermission(device, permissionIntent)
-            statusText.text = "Requesting USB permission..."
-            return
-        }
-
-        if (!::persistentSession.isInitialized) {
-            persistentSession = UsbPersistentSession(this)
-        }
-
-        val success = persistentSession.openSession(device, manager)
-        statusText.text = if (success) {
-            "OpenPort detected and permission granted"
-        } else {
-            "Failed to open session"
-        }
+    private fun buildStatusText(result: TactrixTestResult): String {
+        return result.statusMessage
     }
 }
