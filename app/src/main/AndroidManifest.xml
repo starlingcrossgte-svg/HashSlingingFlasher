@@ -23,8 +23,6 @@
             </intent-filter>
         </activity>
 
-        <receiver android:name=".UsbReceiver" />
-        <service android:name=".UsbDeviceManager" />
     </application>
 
 </manifest>
