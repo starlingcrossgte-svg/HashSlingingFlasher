@@ -67,6 +67,7 @@ class MainActivity : AppCompatActivity() {
             if (granted && device != null) {
                 permissionStateText.text = "Permission: Granted"
                 statusMessageText.text = "OpenPort ready"
+                summaryErrorText.text = "Last Error: None"
                 EcuLogger.usb("USB permission granted")
                 refreshDeveloperLog()
             } else {
@@ -273,7 +274,7 @@ class MainActivity : AppCompatActivity() {
 
         lastCommandText.text = "Last Command: $command"
         summaryOpenPortCommandText.text = "OpenPort Command: $command"
-        summaryBusModeText.text = "Bus Mode: Manual OpenPort"
+        summaryBusModeText.text = buildBusModeSummary(command)
         summaryEcuQueryText.text = "ECU Query: None"
 
         val result = UsbDeviceManager(this).sendCustomAsciiCommand(command)
@@ -304,8 +305,18 @@ class MainActivity : AppCompatActivity() {
         EcuLogger.main("Manual command sent: $command")
         EcuLogger.main(result.statusMessage)
         refreshDeveloperLog()
-
         Toast.makeText(this, "Manual command sent", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun buildBusModeSummary(command: String): String {
+        val normalized = command.trim().lowercase()
+
+        return when {
+            normalized == "ata" -> "Bus Mode: None"
+            normalized.startsWith("ato6") && normalized.contains("500000") -> "Bus Mode: CAN 500000"
+            normalized.startsWith("ato6") -> "Bus Mode: CAN"
+            else -> "Bus Mode: Manual OpenPort"
+        }
     }
 
     private fun refreshDeveloperLog() {
