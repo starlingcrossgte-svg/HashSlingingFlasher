@@ -10,6 +10,7 @@ import android.hardware.usb.UsbManager
 import android.os.Build
 import android.os.Bundle
 import android.view.View
+import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
@@ -32,7 +33,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var developerModeStatusText: TextView
     private lateinit var toggleDeveloperModeButton: Button
     private lateinit var statusMessageText: TextView
-    private lateinit var developerToolsPanel: View
 
     private lateinit var deviceStateText: TextView
     private lateinit var permissionStateText: TextView
@@ -70,9 +70,9 @@ class MainActivity : AppCompatActivity() {
 
             if (granted && device != null) {
                 permissionStateText.text = "Permission: Granted"
-                statusMessageText.text = "OpenPort detected and permission granted"
+                statusMessageText.text = "OpenPort ready"
                 EcuLogger.usb("USB permission granted")
-                runTactrixTest()
+                refreshDeveloperLog()
             } else {
                 permissionStateText.text = "Permission: Denied"
                 statusMessageText.text = "USB permission denied"
@@ -91,19 +91,15 @@ class MainActivity : AppCompatActivity() {
 
         bindViews()
         setupCommandPresetSpinner()
+        registerUsbReceiver()
 
         appTitleText.text = "HashSlingingFlasher"
         developerModeStatusText.text = "Developer Mode: OFF"
-        developerToolsPanel.visibility = View.GONE
-
-        registerUsbReceiver()
 
         toggleDeveloperModeButton.setOnClickListener {
             developerModeEnabled = !developerModeEnabled
             developerModeStatusText.text =
                 if (developerModeEnabled) "Developer Mode: ON" else "Developer Mode: OFF"
-            developerToolsPanel.visibility =
-                if (developerModeEnabled) View.VISIBLE else View.GONE
 
             EcuLogger.main(
                 if (developerModeEnabled) "Developer mode enabled" else "Developer mode disabled"
@@ -124,13 +120,7 @@ class MainActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            lastCommandText.text = "Last Command: $command"
-            manualCommandResponseText.text = "Command queued: $command"
-            summaryOpenPortCommandText.text = "OpenPort Command: $command"
-            EcuLogger.main("Manual command sent: $command")
-            refreshDeveloperLog()
-
-            Toast.makeText(this, "Manual command queued", Toast.LENGTH_SHORT).show()
+            sendManualCommand(command)
         }
 
         clearLogsButton.setOnClickListener {
@@ -140,13 +130,13 @@ class MainActivity : AppCompatActivity() {
         }
 
         refreshButton.setOnClickListener {
-            checkTactrix()
+            refreshOpenPortStatusOnly()
             Toast.makeText(this, "USB status refreshed", Toast.LENGTH_SHORT).show()
         }
 
         EcuLogger.main("HashSlingingFlasher started")
         refreshDeveloperLog()
-        checkTactrix()
+        refreshOpenPortStatusOnly()
     }
 
     override fun onDestroy() {
@@ -159,7 +149,6 @@ class MainActivity : AppCompatActivity() {
         developerModeStatusText = findViewById(R.id.developerModeStatusText)
         toggleDeveloperModeButton = findViewById(R.id.toggleDeveloperModeButton)
         statusMessageText = findViewById(R.id.statusMessageText)
-        developerToolsPanel = findViewById(R.id.developerModePanel)
 
         deviceStateText = findViewById(R.id.deviceStateText)
         permissionStateText = findViewById(R.id.permissionStateText)
@@ -190,6 +179,20 @@ class MainActivity : AppCompatActivity() {
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         commandPresetSpinner.adapter = adapter
 
+        commandPresetSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(
+                parent: AdapterView<*>?,
+                view: View?,
+                position: Int,
+                id: Long
+            ) {
+                manualCommandInput.setText(presets[position])
+            }
+
+            override fun onNothingSelected(parent: AdapterView<*>?) {
+            }
+        }
+
         commandPresetSpinner.setSelection(0)
         manualCommandInput.setText("ATI")
     }
@@ -210,7 +213,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun checkTactrix() {
+    private fun refreshOpenPortStatusOnly() {
         val tactrixDevice = usbManager.deviceList.values.firstOrNull {
             it.vendorId == TACTRIX_VENDOR_ID && it.productId == TACTRIX_PRODUCT_ID
         }
@@ -221,6 +224,10 @@ class MainActivity : AppCompatActivity() {
             deviceStateText.text = "Device: Tactrix OpenPort not detected"
             permissionStateText.text = "Permission: Unknown"
             statusMessageText.text = "USB Status Unknown"
+            summaryOpenPortCommandText.text = "OpenPort Command: None"
+            summaryBusModeText.text = "Bus Mode: None"
+            summaryEcuQueryText.text = "ECU Query: None"
+            summaryResponseTypeText.text = "Response Type: None"
             summaryErrorText.text = "Last Error: Device not detected"
             EcuLogger.usb("Tactrix device not found")
             refreshDeveloperLog()
@@ -231,16 +238,17 @@ class MainActivity : AppCompatActivity() {
 
         if (usbManager.hasPermission(tactrixDevice)) {
             permissionStateText.text = "Permission: Granted"
-            statusMessageText.text = "OpenPort detected and permission granted"
+            statusMessageText.text = "OpenPort ready"
+            summaryErrorText.text = "Last Error: None"
             EcuLogger.usb("USB permission already granted")
-            runTactrixTest()
         } else {
             permissionStateText.text = "Permission: Pending"
             statusMessageText.text = "Requesting USB permission..."
             EcuLogger.usb("Requested USB permission for Tactrix")
             requestUsbPermission(tactrixDevice)
-            refreshDeveloperLog()
         }
+
+        refreshDeveloperLog()
     }
 
     private fun requestUsbPermission(device: UsbDevice) {
@@ -260,43 +268,64 @@ class MainActivity : AppCompatActivity() {
         usbManager.requestPermission(device, permissionIntent)
     }
 
-    private fun runTactrixTest() {
-        val result = UsbDeviceManager(this).openTactrixChannel()
-
-        statusMessageText.text = if (result.success) {
-            "OpenPort detected and permission granted"
-        } else {
-            result.statusMessage
+    private fun sendManualCommand(command: String) {
+        val tactrixDevice = usbManager.deviceList.values.firstOrNull {
+            it.vendorId == TACTRIX_VENDOR_ID && it.productId == TACTRIX_PRODUCT_ID
         }
+
+        if (tactrixDevice == null) {
+            statusMessageText.text = "OpenPort not detected"
+            manualCommandResponseText.text = "No device connected"
+            summaryErrorText.text = "Last Error: Device not detected"
+            EcuLogger.error("Manual command failed: Tactrix device not found")
+            refreshDeveloperLog()
+            return
+        }
+
+        if (!usbManager.hasPermission(tactrixDevice)) {
+            statusMessageText.text = "Requesting USB permission..."
+            manualCommandResponseText.text = "Permission required"
+            EcuLogger.usb("Manual command requested USB permission")
+            requestUsbPermission(tactrixDevice)
+            refreshDeveloperLog()
+            return
+        }
+
+        lastCommandText.text = "Last Command: $command"
+        summaryOpenPortCommandText.text = "OpenPort Command: $command"
+        summaryBusModeText.text = "Bus Mode: Manual"
+        summaryEcuQueryText.text = "ECU Query: None"
+
+        val result = UsbDeviceManager(this).sendCustomAsciiCommand(command)
 
         bytesSentText.text = "Bytes Sent: ${result.bytesSent}"
         bytesReceivedText.text = "Bytes Received: ${result.bytesReceived}"
-        responseHexText.text = if (result.responseHex.isNotEmpty()) result.responseHex else "No response yet"
+        responseHexText.text =
+            if (result.responseHex.isNotEmpty()) result.responseHex else "No response yet"
 
-        summaryBusModeText.text = "Bus Mode: CAN"
-        summaryEcuQueryText.text = "ECU Query: 0100"
-        summaryResponseTypeText.text = if (result.success) {
-            "Response Type: ECU response"
-        } else if (result.bytesReceived > 0) {
-            "Response Type: OpenPort response"
-        } else {
-            "Response Type: None"
-        }
+        manualCommandResponseText.text =
+            if (result.responseAscii.isNotEmpty()) result.responseAscii.trim()
+            else if (result.responseHex.isNotEmpty()) result.responseHex
+            else result.statusMessage
 
-        summaryErrorText.text = if (result.success) {
-            "Last Error: None"
-        } else {
-            "Last Error: ${result.statusMessage}"
-        }
+        statusMessageText.text =
+            if (result.success) "Manual command response received" else result.statusMessage
 
-        manualCommandResponseText.text = if (result.responseHex.isNotEmpty()) {
-            "Last response hex captured"
-        } else {
-            "No response yet"
-        }
+        summaryResponseTypeText.text =
+            if (result.responseAscii.isNotEmpty() || result.responseHex.isNotEmpty()) {
+                "Response Type: OpenPort response"
+            } else {
+                "Response Type: None"
+            }
 
+        summaryErrorText.text =
+            if (result.success) "Last Error: None" else "Last Error: ${result.statusMessage}"
+
+        EcuLogger.main("Manual command sent: $command")
         EcuLogger.main(result.statusMessage)
         refreshDeveloperLog()
+
+        Toast.makeText(this, "Manual command sent", Toast.LENGTH_SHORT).show()
     }
 
     private fun refreshDeveloperLog() {
