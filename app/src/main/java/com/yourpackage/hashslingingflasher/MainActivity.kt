@@ -65,17 +65,16 @@ class MainActivity : AppCompatActivity() {
             currentDevice = device
 
             if (granted && device != null) {
-                permissionStateText.text = "Permission: Granted"
-                statusMessageText.text = "OpenPort ready"
-                summaryErrorText.text = "Last Error: None"
                 EcuLogger.usb("USB permission granted")
-                refreshDeveloperLog()
+                refreshOpenPortStatusOnly()
+                Toast.makeText(this@MainActivity, "USB permission granted", Toast.LENGTH_SHORT).show()
             } else {
                 permissionStateText.text = "Permission: Denied"
                 statusMessageText.text = "USB permission denied"
                 summaryErrorText.text = "Last Error: USB permission denied"
                 EcuLogger.error("USB permission denied")
                 refreshDeveloperLog()
+                Toast.makeText(this@MainActivity, "USB permission denied", Toast.LENGTH_SHORT).show()
             }
         }
     }
