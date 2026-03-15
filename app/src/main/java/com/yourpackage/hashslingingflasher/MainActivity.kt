@@ -56,7 +56,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var clearLogsButton: Button
     private lateinit var refreshButton: Button
 
-    private var developerModeEnabled = false
+    private var developerModeEnabled = true
     private var currentDevice: UsbDevice? = null
 
     private val usbReceiver = object : BroadcastReceiver() {
@@ -94,7 +94,7 @@ class MainActivity : AppCompatActivity() {
         registerUsbReceiver()
 
         appTitleText.text = "HashSlingingFlasher"
-        developerModeStatusText.text = "Developer Mode: OFF"
+        developerModeStatusText.text = "Developer Mode: ON"
 
         toggleDeveloperModeButton.setOnClickListener {
             developerModeEnabled = !developerModeEnabled
