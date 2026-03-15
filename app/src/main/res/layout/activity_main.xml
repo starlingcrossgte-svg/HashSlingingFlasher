@@ -22,40 +22,6 @@
             android:layout_marginBottom="20dp" />
 
         <LinearLayout
-            android:id="@+id/developerModePanel"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="#FFFFFF"
-            android:padding="16dp"
-            android:layout_marginBottom="16dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Developer Mode"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                android:textColor="#666666"
-                android:layout_marginBottom="8dp" />
-
-            <TextView
-                android:id="@+id/developerModeStatusText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Developer Mode: OFF"
-                android:textSize="16sp"
-                android:textColor="#222222"
-                android:layout_marginBottom="12dp" />
-
-            <Button
-                android:id="@+id/toggleDeveloperModeButton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="TOGGLE DEVELOPER MODE" />
-        </LinearLayout>
-
-        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
@@ -83,7 +49,6 @@
         </LinearLayout>
 
         <LinearLayout
-            android:id="@+id/debugDetailsPanel"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
@@ -267,15 +232,18 @@
                 android:id="@+id/manualCommandInput"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="ATI"
-                android:layout_marginBottom="12dp" />
+                android:hint="Enter OpenPort command"
+                android:textSize="15sp"
+                android:textColor="#222222"
+                android:textColorHint="#888888"
+                android:layout_marginBottom="16dp" />
 
             <Button
                 android:id="@+id/sendManualCommandButton"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="SEND MANUAL COMMAND"
-                android:layout_marginBottom="12dp" />
+                android:layout_marginBottom="16dp" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -298,7 +266,6 @@
         </LinearLayout>
 
         <LinearLayout
-            android:id="@+id/liveLogPanel"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
@@ -320,19 +287,18 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="No logs yet"
-                android:textSize="14sp"
+                android:textSize="15sp"
                 android:textColor="#222222"
                 android:background="#F0F0F0"
                 android:padding="12dp"
-                android:fontFamily="monospace"
-                android:scrollbars="vertical" />
+                android:typeface="monospace"
+                android:layout_marginBottom="16dp" />
 
             <Button
                 android:id="@+id/clearLogsButton"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="CLEAR LOGS"
-                android:layout_marginTop="12dp" />
+                android:text="CLEAR LOGS" />
         </LinearLayout>
 
         <Button
@@ -340,7 +306,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="REFRESH USB STATUS"
-            android:layout_marginBottom="16dp" />
+            android:layout_marginBottom="24dp" />
 
     </LinearLayout>
 </ScrollView>

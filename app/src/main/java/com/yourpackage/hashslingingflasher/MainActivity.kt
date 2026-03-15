@@ -9,7 +9,6 @@ import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
 import android.os.Build
 import android.os.Bundle
-import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Button
@@ -30,8 +29,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var usbManager: UsbManager
 
     private lateinit var appTitleText: TextView
-    private lateinit var developerModeStatusText: TextView
-    private lateinit var toggleDeveloperModeButton: Button
     private lateinit var statusMessageText: TextView
 
     private lateinit var deviceStateText: TextView
@@ -56,7 +53,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var clearLogsButton: Button
     private lateinit var refreshButton: Button
 
-    private var developerModeEnabled = true
     private var currentDevice: UsbDevice? = null
 
     private val usbReceiver = object : BroadcastReceiver() {
@@ -94,24 +90,6 @@ class MainActivity : AppCompatActivity() {
         registerUsbReceiver()
 
         appTitleText.text = "HashSlingingFlasher"
-        developerModeStatusText.text = "Developer Mode: ON"
-
-        toggleDeveloperModeButton.setOnClickListener {
-            developerModeEnabled = !developerModeEnabled
-            developerModeStatusText.text =
-                if (developerModeEnabled) "Developer Mode: ON" else "Developer Mode: OFF"
-
-            EcuLogger.main(
-                if (developerModeEnabled) "Developer mode enabled" else "Developer mode disabled"
-            )
-            refreshDeveloperLog()
-
-            Toast.makeText(
-                this,
-                if (developerModeEnabled) "Developer mode: ON" else "Developer mode: OFF",
-                Toast.LENGTH_SHORT
-            ).show()
-        }
 
         sendManualCommandButton.setOnClickListener {
             val command = manualCommandInput.text.toString().trim()
@@ -146,8 +124,6 @@ class MainActivity : AppCompatActivity() {
 
     private fun bindViews() {
         appTitleText = findViewById(R.id.appTitleText)
-        developerModeStatusText = findViewById(R.id.developerModeStatusText)
-        toggleDeveloperModeButton = findViewById(R.id.toggleDeveloperModeButton)
         statusMessageText = findViewById(R.id.statusMessageText)
 
         deviceStateText = findViewById(R.id.deviceStateText)
@@ -182,7 +158,7 @@ class MainActivity : AppCompatActivity() {
         commandPresetSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(
                 parent: AdapterView<*>?,
-                view: View?,
+                view: android.view.View?,
                 position: Int,
                 id: Long
             ) {
