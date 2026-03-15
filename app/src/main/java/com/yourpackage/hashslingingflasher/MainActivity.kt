@@ -1,60 +1,54 @@
-package com.yourpackage.hashslingingflasher
+package com.ecuflasher
 
+import android.app.Activity
+import android.hardware.usb.UsbDevice
+import android.hardware.usb.UsbManager
 import android.os.Bundle
-import android.widget.Button
-import android.widget.EditText
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+
+enum class UsbStatus {
+    CONNECTED,
+    DISCONNECTED,
+    UNKNOWN
+}
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var headerTitle: TextView
-    private lateinit var toggleDevButton: Button
-    private lateinit var overallStatus: TextView
-    private lateinit var manualCommandEdit: EditText
-    private lateinit var sendCommandButton: Button
-    private lateinit var refreshUsbButton: Button
+    private lateinit var usbStatusText: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Bind views
-        headerTitle = findViewById(R.id.header_title)
-        toggleDevButton = findViewById(R.id.button_toggle_dev)
-        overallStatus = findViewById(R.id.text_overall_status)
-        manualCommandEdit = findViewById(R.id.edit_manual_command)
-        sendCommandButton = findViewById(R.id.button_send_command)
-        refreshUsbButton = findViewById(R.id.button_refresh_usb)
+        usbStatusText = findViewById(R.id.usbStatusText)
 
-        // Set header text
-        headerTitle.text = "HashSlingingFlasher"
+        // Initial USB check
+        checkUsbConnection()
 
-        // Toggle developer mode
-        toggleDevButton.setOnClickListener {
-            Toast.makeText(this, "Developer mode toggled", Toast.LENGTH_SHORT).show()
-            // TODO: implement actual developer mode logic
+        // Register BroadcastReceiver for USB attach/detach
+        registerReceiver(usbReceiver, UsbReceiver.getIntentFilter())
+    }
+
+    private fun checkUsbConnection() {
+        val usbManager = getSystemService(Activity.USB_SERVICE) as UsbManager
+        val deviceList: HashMap<String, UsbDevice> = usbManager.deviceList
+
+        val status = if (deviceList.isNotEmpty()) {
+            UsbStatus.CONNECTED
+        } else {
+            UsbStatus.DISCONNECTED
         }
 
-        // Manual command sender
-        sendCommandButton.setOnClickListener {
-            val cmd = manualCommandEdit.text.toString()
-            if (cmd.isNotEmpty()) {
-                Toast.makeText(this, "Command sent: $cmd", Toast.LENGTH_SHORT).show()
-                // TODO: implement sending command to OpenPort
-            } else {
-                Toast.makeText(this, "Enter a command first", Toast.LENGTH_SHORT).show()
-            }
-        }
+        updateUsbStatus(status)
+    }
 
-        // USB status refresh
-        refreshUsbButton.setOnClickListener {
-            Toast.makeText(this, "USB status refreshed", Toast.LENGTH_SHORT).show()
-            overallStatus.text = "USB Status Unknown"
-            // TODO: implement actual USB detection
+    private fun updateUsbStatus(status: UsbStatus) {
+        // Inline update without activity redraw
+        usbStatusText.text = when (status) {
+            UsbStatus.CONNECTED -> "USB Device Connected"
+            UsbStatus.DISCONNECTED -> "No USB Device Connected"
+            UsbStatus.UNKNOWN -> "USB Status Unknown"
         }
     }
 }
-// trigger GitHub Actions build
-// trigger build
