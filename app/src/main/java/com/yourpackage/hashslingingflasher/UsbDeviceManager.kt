@@ -40,42 +40,21 @@ class UsbDeviceManager(private val context: Context) {
                 val connection = usbManager.openDevice(device)
                 if (connection == null) {
                     EcuLogger.error("Failed to open Tactrix USB device")
-                    return TactrixTestResult(
-                        false,
-                        "Failed to open Tactrix USB device",
-                        -1,
-                        -1,
-                        "",
-                        ""
-                    )
+                    return TactrixTestResult(false, "Failed to open Tactrix USB device", -1, -1, "", "")
                 }
 
                 val usbInterface = findBulkCommunicationInterface(device)
                 if (usbInterface == null) {
                     EcuLogger.error("No bulk communication interface found")
                     connection.close()
-                    return TactrixTestResult(
-                        false,
-                        "No bulk communication interface found",
-                        -1,
-                        -1,
-                        "",
-                        ""
-                    )
+                    return TactrixTestResult(false, "No bulk communication interface found", -1, -1, "", "")
                 }
 
                 val claimed = connection.claimInterface(usbInterface, true)
                 if (!claimed) {
                     EcuLogger.error("Failed to claim Tactrix interface")
                     connection.close()
-                    return TactrixTestResult(
-                        false,
-                        "Failed to claim Tactrix interface",
-                        -1,
-                        -1,
-                        "",
-                        ""
-                    )
+                    return TactrixTestResult(false, "Failed to claim Tactrix interface", -1, -1, "", "")
                 }
 
                 EcuLogger.usb("Tactrix interface claimed successfully")
@@ -87,14 +66,7 @@ class UsbDeviceManager(private val context: Context) {
                     EcuLogger.error("Bulk endpoints not found")
                     connection.releaseInterface(usbInterface)
                     connection.close()
-                    return TactrixTestResult(
-                        false,
-                        "Bulk endpoints not found",
-                        -1,
-                        -1,
-                        "",
-                        ""
-                    )
+                    return TactrixTestResult(false, "Bulk endpoints not found", -1, -1, "", "")
                 }
 
                 EcuLogger.usb("Bulk OUT endpoint address: ${endpointOut.address}")
@@ -108,7 +80,7 @@ class UsbDeviceManager(private val context: Context) {
                     commandString = "ata\r\n"
                 )
 
-                if (!ataResult.responseAscii.contains("aro")) {
+                if (!ataResult.responseAscii.contains("aro", ignoreCase = true)) {
                     connection.releaseInterface(usbInterface)
                     connection.close()
                     EcuLogger.usb("Tactrix connection closed cleanly")
@@ -130,7 +102,7 @@ class UsbDeviceManager(private val context: Context) {
                     commandString = "ato6 0 500000 0\r\n"
                 )
 
-                if (!atoResult.responseAscii.contains("aro")) {
+                if (!atoResult.responseAscii.contains("aro", ignoreCase = true)) {
                     connection.releaseInterface(usbInterface)
                     connection.close()
                     EcuLogger.usb("Tactrix connection closed cleanly")
@@ -213,6 +185,28 @@ class UsbDeviceManager(private val context: Context) {
         EcuLogger.usb("Bulk OUT endpoint address: ${endpointOut.address}")
         EcuLogger.usb("Bulk IN endpoint address: ${endpointIn.address}")
 
+        val wakeResult = sendAsciiCommand(
+            connection = connection,
+            endpointOut = endpointOut,
+            endpointIn = endpointIn,
+            commandLabel = "Manual command ATA wake",
+            commandString = "ata\r\n"
+        )
+
+        if (!wakeResult.responseAscii.contains("aro", ignoreCase = true)) {
+            connection.releaseInterface(usbInterface)
+            connection.close()
+            EcuLogger.usb("Tactrix connection closed cleanly")
+            return TactrixTestResult(
+                false,
+                "OpenPort did not respond to ATA wake",
+                wakeResult.bytesSent,
+                wakeResult.bytesReceived,
+                wakeResult.responseHex,
+                wakeResult.responseAscii
+            )
+        }
+
         val normalizedCommand = if (command.endsWith("\r\n")) {
             command
         } else {
@@ -231,9 +225,12 @@ class UsbDeviceManager(private val context: Context) {
         connection.close()
         EcuLogger.usb("Tactrix connection closed cleanly")
 
+        val gotResponse = result.bytesReceived > 0 &&
+            (result.responseAscii.isNotEmpty() || result.responseHex.isNotEmpty())
+
         return TactrixTestResult(
-            success = result.bytesReceived >= 0,
-            statusMessage = if (result.responseAscii.isNotEmpty() || result.responseHex.isNotEmpty()) {
+            success = gotResponse,
+            statusMessage = if (gotResponse) {
                 "OpenPort response received"
             } else {
                 "No response from OpenPort"
