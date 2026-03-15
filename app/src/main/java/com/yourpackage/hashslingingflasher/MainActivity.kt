@@ -28,6 +28,9 @@ class MainActivity : AppCompatActivity() {
         sendCommandButton = findViewById(R.id.button_send_command)
         refreshUsbButton = findViewById(R.id.button_refresh_usb)
 
+        // Set header text
+        headerTitle.text = "HashSlingingFlasher"
+
         // Button listeners
         toggleDevButton.setOnClickListener {
             Toast.makeText(this, "Developer mode toggled", Toast.LENGTH_SHORT).show()
