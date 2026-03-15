@@ -31,12 +31,13 @@ class MainActivity : AppCompatActivity() {
         // Set header text
         headerTitle.text = "HashSlingingFlasher"
 
-        // Button listeners
+        // Toggle developer mode
         toggleDevButton.setOnClickListener {
             Toast.makeText(this, "Developer mode toggled", Toast.LENGTH_SHORT).show()
             // TODO: implement actual developer mode logic
         }
 
+        // Manual command sender
         sendCommandButton.setOnClickListener {
             val cmd = manualCommandEdit.text.toString()
             if (cmd.isNotEmpty()) {
@@ -47,9 +48,12 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        // USB status refresh
         refreshUsbButton.setOnClickListener {
             Toast.makeText(this, "USB status refreshed", Toast.LENGTH_SHORT).show()
-            overallStatus.text = "USB Status Unknown" // TODO: implement actual USB detection
+            overallStatus.text = "USB Status Unknown"
+            // TODO: implement actual USB detection
         }
     }
 }
+// trigger GitHub Actions build
