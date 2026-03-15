@@ -150,7 +150,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupCommandPresetSpinner() {
-        val presets = listOf("ATI", "ATA", "ATZ", "ATRV", "0100")
+        val presets = listOf(
+            "ata",
+            "ato6 0 500000 0"
+        )
+
         val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, presets)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         commandPresetSpinner.adapter = adapter
@@ -170,7 +174,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         commandPresetSpinner.setSelection(0)
-        manualCommandInput.setText("ATI")
+        manualCommandInput.setText("ata")
     }
 
     private fun registerUsbReceiver() {
@@ -269,7 +273,7 @@ class MainActivity : AppCompatActivity() {
 
         lastCommandText.text = "Last Command: $command"
         summaryOpenPortCommandText.text = "OpenPort Command: $command"
-        summaryBusModeText.text = "Bus Mode: Manual"
+        summaryBusModeText.text = "Bus Mode: Manual OpenPort"
         summaryEcuQueryText.text = "ECU Query: None"
 
         val result = UsbDeviceManager(this).sendCustomAsciiCommand(command)
@@ -285,7 +289,7 @@ class MainActivity : AppCompatActivity() {
             else result.statusMessage
 
         statusMessageText.text =
-            if (result.success) "Manual command response received" else result.statusMessage
+            if (result.success) "OpenPort command response received" else result.statusMessage
 
         summaryResponseTypeText.text =
             if (result.responseAscii.isNotEmpty() || result.responseHex.isNotEmpty()) {
