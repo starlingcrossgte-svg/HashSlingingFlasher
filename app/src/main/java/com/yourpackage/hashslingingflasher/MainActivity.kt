@@ -1,4 +1,4 @@
-package com.yourpackage.hashslingingflasher
+package com.hashslingingflasher
 
 import android.hardware.usb.UsbManager
 import android.os.Bundle
