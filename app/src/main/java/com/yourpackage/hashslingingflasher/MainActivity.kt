@@ -56,7 +56,7 @@ class MainActivity : AppCompatActivity() {
     private var currentDevice: UsbDevice? = null
 
     private val usbReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent?) {
+        override fun onReceive(context: Context?, intent: Intent?) {
             if (intent == null) return
 
             val action = intent.action ?: ""
@@ -66,11 +66,14 @@ class MainActivity : AppCompatActivity() {
             when (action) {
                 ACTION_USB_PERMISSION -> {
                     val device = getUsbDeviceFromIntent(intent)
-                    val granted = intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)
+                    val granted =
+                        intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)
 
                     EcuLogger.usb("usbReceiver granted: $granted")
                     if (device != null) {
-                        EcuLogger.usb("usbReceiver device: vendor=${device.vendorId} product=${device.productId}")
+                        EcuLogger.usb(
+                            "usbReceiver device: vendor=${device.vendorId} product=${device.productId}"
+                        )
                     } else {
                         EcuLogger.usb("usbReceiver device: null")
                     }
@@ -89,23 +92,33 @@ class MainActivity : AppCompatActivity() {
                         summaryErrorText.text = "Last Error: None"
 
                         EcuLogger.usb("USB permission granted in receiver")
-                        Toast.makeText(this@MainActivity, "USB permission granted", Toast.LENGTH_SHORT).show()
+                        refreshDeveloperLog()
+                        Toast.makeText(
+                            this@MainActivity,
+                            "USB permission granted",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     } else {
                         permissionStateText.text = "Permission: Denied"
                         statusMessageText.text = "USB permission denied"
                         summaryErrorText.text = "Last Error: USB permission denied"
 
                         EcuLogger.error("USB permission denied in receiver")
-                        Toast.makeText(this@MainActivity, "USB permission denied", Toast.LENGTH_SHORT).show()
+                        refreshDeveloperLog()
+                        Toast.makeText(
+                            this@MainActivity,
+                            "USB permission denied",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
-
-                    refreshDeveloperLog()
                 }
 
                 UsbManager.ACTION_USB_DEVICE_ATTACHED -> {
                     val device = getUsbDeviceFromIntent(intent)
                     if (device != null) {
-                        EcuLogger.usb("USB device attached: vendor=${device.vendorId} product=${device.productId}")
+                        EcuLogger.usb(
+                            "USB device attached: vendor=${device.vendorId} product=${device.productId}"
+                        )
                     } else {
                         EcuLogger.usb("USB device attached: device null")
                     }
@@ -133,7 +146,9 @@ class MainActivity : AppCompatActivity() {
                 UsbManager.ACTION_USB_DEVICE_DETACHED -> {
                     val device = getUsbDeviceFromIntent(intent)
                     if (device != null) {
-                        EcuLogger.usb("USB device detached: vendor=${device.vendorId} product=${device.productId}")
+                        EcuLogger.usb(
+                            "USB device detached: vendor=${device.vendorId} product=${device.productId}"
+                        )
                     } else {
                         EcuLogger.usb("USB device detached: device null")
                     }
@@ -381,38 +396,44 @@ class MainActivity : AppCompatActivity() {
         summaryOpenPortCommandText.text = "OpenPort Command: $command"
         summaryBusModeText.text = buildBusModeSummary(command)
         summaryEcuQueryText.text = "ECU Query: None"
+        statusMessageText.text = "Sending command..."
+        manualCommandResponseText.text = "Waiting for OpenPort response..."
 
-        val result = UsbDeviceManager(this).sendCustomAsciiCommand(command)
+        Thread {
+            val result = UsbDeviceManager(this).sendCustomAsciiCommand(command)
 
-        bytesSentText.text = "Bytes Sent: ${result.bytesSent}"
-        bytesReceivedText.text = "Bytes Received: ${result.bytesReceived}"
-        responseHexText.text =
-            if (result.responseHex.isNotEmpty()) result.responseHex else "No response yet"
+            runOnUiThread {
+                bytesSentText.text = "Bytes Sent: ${result.bytesSent}"
+                bytesReceivedText.text = "Bytes Received: ${result.bytesReceived}"
+                responseHexText.text =
+                    if (result.responseHex.isNotEmpty()) result.responseHex else "No response yet"
 
-        manualCommandResponseText.text =
-            when {
-                result.responseAscii.isNotEmpty() -> result.responseAscii.trim()
-                result.responseHex.isNotEmpty() -> result.responseHex
-                else -> result.statusMessage
+                manualCommandResponseText.text =
+                    when {
+                        result.responseAscii.isNotEmpty() -> result.responseAscii.trim()
+                        result.responseHex.isNotEmpty() -> result.responseHex
+                        else -> result.statusMessage
+                    }
+
+                statusMessageText.text =
+                    if (result.success) "OpenPort command response received" else result.statusMessage
+
+                summaryResponseTypeText.text =
+                    if (result.responseAscii.isNotEmpty() || result.responseHex.isNotEmpty()) {
+                        "Response Type: OpenPort response"
+                    } else {
+                        "Response Type: None"
+                    }
+
+                summaryErrorText.text =
+                    if (result.success) "Last Error: None" else "Last Error: ${result.statusMessage}"
+
+                EcuLogger.main("Manual command sent: $command")
+                EcuLogger.main(result.statusMessage)
+                refreshDeveloperLog()
+                Toast.makeText(this, "Manual command sent", Toast.LENGTH_SHORT).show()
             }
-
-        statusMessageText.text =
-            if (result.success) "OpenPort command response received" else result.statusMessage
-
-        summaryResponseTypeText.text =
-            if (result.responseAscii.isNotEmpty() || result.responseHex.isNotEmpty()) {
-                "Response Type: OpenPort response"
-            } else {
-                "Response Type: None"
-            }
-
-        summaryErrorText.text =
-            if (result.success) "Last Error: None" else "Last Error: ${result.statusMessage}"
-
-        EcuLogger.main("Manual command sent: $command")
-        EcuLogger.main(result.statusMessage)
-        refreshDeveloperLog()
-        Toast.makeText(this, "Manual command sent", Toast.LENGTH_SHORT).show()
+        }.start()
     }
 
     private fun buildBusModeSummary(command: String): String {
@@ -420,7 +441,7 @@ class MainActivity : AppCompatActivity() {
 
         return when {
             normalized == "ata" -> "Bus Mode: None"
-            normalized.startsWith("atpb") && normalized.contains("500000") -> "Bus Mode: CAN 500000"
+            normalized.startsWith("ato6") && normalized.contains("500000") -> "Bus Mode: CAN 500000"
             normalized.startsWith("atsp") -> "Bus Mode: CAN"
             else -> "Bus Mode: Manual OpenPort"
         }
