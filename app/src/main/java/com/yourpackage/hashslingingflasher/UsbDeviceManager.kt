@@ -160,7 +160,7 @@ class UsbDeviceManager(private val context: Context) {
                     } else if (ecuResult.bytesReceived > 0) {
                         "OpenPort response received"
                     } else {
-                        "ECU query sent but no response"
+                        "No response from ECU"
                     },
                     bytesSent = ecuResult.bytesSent,
                     bytesReceived = ecuResult.bytesReceived,
