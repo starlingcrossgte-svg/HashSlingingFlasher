@@ -57,10 +57,26 @@ class MainActivity : AppCompatActivity() {
 
     private val usbReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
-            if (intent?.action != ACTION_USB_PERMISSION) return
+            EcuLogger.usb("usbReceiver fired")
+            EcuLogger.usb("usbReceiver action: ${intent?.action}")
+
+            if (intent?.action != ACTION_USB_PERMISSION) {
+                EcuLogger.usb("usbReceiver ignored unexpected action")
+                refreshDeveloperLog()
+                return
+            }
 
             val device = getUsbDeviceFromIntent(intent)
             val granted = intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)
+
+            EcuLogger.usb("usbReceiver granted: $granted")
+            EcuLogger.usb(
+                if (device != null) {
+                    "usbReceiver device: vendor=${device.vendorId} product=${device.productId}"
+                } else {
+                    "usbReceiver device: null"
+                }
+            )
 
             currentDevice = device
 
@@ -75,14 +91,14 @@ class MainActivity : AppCompatActivity() {
                 summaryResponseTypeText.text = "Response Type: None"
                 summaryErrorText.text = "Last Error: None"
 
-                EcuLogger.usb("USB permission granted")
+                EcuLogger.usb("USB permission granted in receiver")
                 refreshDeveloperLog()
                 Toast.makeText(this@MainActivity, "USB permission granted", Toast.LENGTH_SHORT).show()
             } else {
                 permissionStateText.text = "Permission: Denied"
                 statusMessageText.text = "USB permission denied"
                 summaryErrorText.text = "Last Error: USB permission denied"
-                EcuLogger.error("USB permission denied")
+                EcuLogger.error("USB permission denied in receiver")
                 refreshDeveloperLog()
                 Toast.makeText(this@MainActivity, "USB permission denied", Toast.LENGTH_SHORT).show()
             }
@@ -194,11 +210,15 @@ class MainActivity : AppCompatActivity() {
         } else {
             registerReceiver(usbReceiver, filter)
         }
+        EcuLogger.usb("USB permission receiver registered")
+        refreshDeveloperLog()
     }
 
     private fun unregisterReceiverSafe() {
         try {
             unregisterReceiver(usbReceiver)
+            EcuLogger.usb("USB permission receiver unregistered")
+            refreshDeveloperLog()
         } catch (_: IllegalArgumentException) {
         }
     }
@@ -243,10 +263,14 @@ class MainActivity : AppCompatActivity() {
 
     private fun requestUsbPermission(device: UsbDevice) {
         val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            PendingIntent.FLAG_IMMUTABLE
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         } else {
-            0
+            PendingIntent.FLAG_UPDATE_CURRENT
         }
+
+        EcuLogger.usb("requestUsbPermission called")
+        EcuLogger.usb("requestUsbPermission flags: $flags")
+        EcuLogger.usb("requestUsbPermission device vendor=${device.vendorId} product=${device.productId}")
 
         val permissionIntent = PendingIntent.getBroadcast(
             this,
@@ -256,6 +280,8 @@ class MainActivity : AppCompatActivity() {
         )
 
         usbManager.requestPermission(device, permissionIntent)
+        EcuLogger.usb("usbManager.requestPermission invoked")
+        refreshDeveloperLog()
     }
 
     private fun sendManualCommand(command: String) {
