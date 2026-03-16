@@ -5,308 +5,304 @@
     android:fillViewport="true"
     android:background="#F5F5F5">
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="20dp">
+<LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="20dp">
 
-        <TextView
-            android:id="@+id/appTitleText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="HashSlingingFlasher"
-            android:textSize="28sp"
-            android:textStyle="bold"
-            android:textColor="#111111"
-            android:layout_marginBottom="20dp" />
+<TextView
+    android:id="@+id/appTitleText"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="HashSlingingFlasher"
+    android:textSize="28sp"
+    android:textStyle="bold"
+    android:textColor="#111111"
+    android:layout_marginBottom="20dp" />
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="#FFFFFF"
-            android:padding="16dp"
-            android:layout_marginBottom="16dp">
+<LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="#FFFFFF"
+    android:padding="16dp"
+    android:layout_marginBottom="16dp">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Overall Status"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                android:textColor="#666666" />
+<TextView
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="Overall Status"
+    android:textSize="14sp"
+    android:textStyle="bold"
+    android:textColor="#666666" />
 
-            <TextView
-                android:id="@+id/statusMessageText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="USB Status Unknown"
-                android:textSize="24sp"
-                android:textStyle="bold"
-                android:textColor="#222222" />
-        </LinearLayout>
+<TextView
+    android:id="@+id/statusMessageText"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:text="USB status unknown"
+    android:layout_marginTop="8dp"
+    android:textSize="24sp"
+    android:textStyle="bold"
+    android:textColor="#222222" />
 
-        <Button
-            android:id="@+id/refreshButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="REFRESH USB STATUS"
-            android:layout_marginBottom="16dp" />
+</LinearLayout>
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="#FFFFFF"
-            android:padding="16dp"
-            android:layout_marginBottom="16dp">
+<LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="#FFFFFF"
+    android:padding="16dp"
+    android:layout_marginBottom="16dp">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Debug Details"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                android:textColor="#666666"
-                android:layout_marginBottom="12dp" />
+<TextView
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="Debug Details"
+    android:textSize="14sp"
+    android:textStyle="bold"
+    android:textColor="#666666"
+    android:layout_marginBottom="12dp" />
 
-            <TextView
-                android:id="@+id/deviceStateText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Device: Unknown"
-                android:textSize="15sp"
-                android:textColor="#222222"
-                android:layout_marginBottom="8dp" />
+<TextView
+    android:id="@+id/deviceStateText"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:text="Device: Unknown"
+    android:textSize="15sp"
+    android:textColor="#222222"
+    android:layout_marginBottom="8dp" />
 
-            <TextView
-                android:id="@+id/permissionStateText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Permission: Unknown"
-                android:textSize="15sp"
-                android:textColor="#222222"
-                android:layout_marginBottom="8dp" />
+<TextView
+    android:id="@+id/permissionStateText"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:text="Permission: Unknown"
+    android:textSize="15sp"
+    android:textColor="#222222"
+    android:layout_marginBottom="8dp" />
 
-            <TextView
-                android:id="@+id/lastCommandText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Last Command: None"
-                android:textSize="15sp"
-                android:textColor="#222222"
-                android:layout_marginBottom="8dp" />
+<TextView
+    android:id="@+id/lastCommandText"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:text="Last Command: None"
+    android:textSize="15sp"
+    android:textColor="#222222"
+    android:layout_marginBottom="8dp" />
 
-            <TextView
-                android:id="@+id/bytesSentText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Bytes Sent: -"
-                android:textSize="15sp"
-                android:textColor="#222222"
-                android:layout_marginBottom="8dp" />
+<TextView
+    android:id="@+id/bytesSentText"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:text="Bytes Sent: -"
+    android:textSize="15sp"
+    android:textColor="#222222"
+    android:layout_marginBottom="8dp" />
 
-            <TextView
-                android:id="@+id/bytesReceivedText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Bytes Received: -"
-                android:textSize="15sp"
-                android:textColor="#222222"
-                android:layout_marginBottom="8dp" />
+<TextView
+    android:id="@+id/bytesReceivedText"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:text="Bytes Received: -"
+    android:textSize="15sp"
+    android:textColor="#222222"
+    android:layout_marginBottom="8dp" />
 
-            <TextView
-                android:id="@+id/responseHexLabelText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Response Hex"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                android:textColor="#666666"
-                android:layout_marginTop="4dp"
-                android:layout_marginBottom="6dp" />
+<TextView
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:text="Response Hex"
+    android:textSize="14sp"
+    android:textStyle="bold"
+    android:textColor="#666666"
+    android:layout_marginTop="4dp"
+    android:layout_marginBottom="6dp" />
 
-            <TextView
-                android:id="@+id/responseHexText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="No response yet"
-                android:textSize="15sp"
-                android:textColor="#222222"
-                android:background="#F0F0F0"
-                android:padding="12dp" />
-        </LinearLayout>
+<TextView
+    android:id="@+id/responseHexText"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:text="No response yet"
+    android:textSize="15sp"
+    android:textColor="#222222"
+    android:background="#F0F0F0"
+    android:padding="12dp" />
 
-        <LinearLayout
-            android:id="@+id/sessionSummaryPanel"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="#FFFFFF"
-            android:padding="16dp"
-            android:layout_marginBottom="16dp">
+</LinearLayout>
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Session Summary"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                android:textColor="#666666"
-                android:layout_marginBottom="12dp" />
+<LinearLayout
+    android:id="@+id/sessionSummaryPanel"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="#FFFFFF"
+    android:padding="16dp"
+    android:layout_marginBottom="16dp">
 
-            <TextView
-                android:id="@+id/summaryOpenPortCommandText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="OpenPort Command: None"
-                android:textSize="15sp"
-                android:textColor="#222222"
-                android:layout_marginBottom="8dp" />
+<TextView
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="Session Summary"
+    android:textSize="14sp"
+    android:textStyle="bold"
+    android:textColor="#666666"
+    android:layout_marginBottom="12dp" />
 
-            <TextView
-                android:id="@+id/summaryBusModeText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Bus Mode: None"
-                android:textSize="15sp"
-                android:textColor="#222222"
-                android:layout_marginBottom="8dp" />
+<TextView
+    android:id="@+id/summaryOpenPortCommandText"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:text="OpenPort Command: None"
+    android:textSize="15sp"
+    android:textColor="#222222"
+    android:layout_marginBottom="8dp" />
 
-            <TextView
-                android:id="@+id/summaryEcuQueryText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="ECU Query: None"
-                android:textSize="15sp"
-                android:textColor="#222222"
-                android:layout_marginBottom="8dp" />
+<TextView
+    android:id="@+id/summaryBusModeText"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:text="Bus Mode: None"
+    android:textSize="15sp"
+    android:textColor="#222222"
+    android:layout_marginBottom="8dp" />
 
-            <TextView
-                android:id="@+id/summaryResponseTypeText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Response Type: None"
-                android:textSize="15sp"
-                android:textColor="#222222"
-                android:layout_marginBottom="8dp" />
+<TextView
+    android:id="@+id/summaryEcuQueryText"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:text="ECU Query: None"
+    android:textSize="15sp"
+    android:textColor="#222222"
+    android:layout_marginBottom="8dp" />
 
-            <TextView
-                android:id="@+id/summaryErrorText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Last Error: None"
-                android:textSize="15sp"
-                android:textColor="#222222" />
-        </LinearLayout>
+<TextView
+    android:id="@+id/summaryResponseTypeText"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:text="Response Type: None"
+    android:textSize="15sp"
+    android:textColor="#222222"
+    android:layout_marginBottom="8dp" />
 
-        <LinearLayout
-            android:id="@+id/manualCommandPanel"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="#FFFFFF"
-            android:padding="16dp"
-            android:layout_marginBottom="16dp">
+<TextView
+    android:id="@+id/summaryErrorText"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:text="Last Error: None"
+    android:textSize="15sp"
+    android:textColor="#222222" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Manual Command Console"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                android:textColor="#666666"
-                android:layout_marginBottom="12dp" />
+</LinearLayout>
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Command Preset"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                android:textColor="#666666"
-                android:layout_marginBottom="6dp" />
+<LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="#FFFFFF"
+    android:padding="16dp"
+    android:layout_marginBottom="16dp">
 
-            <Spinner
-                android:id="@+id/commandPresetSpinner"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp" />
+<TextView
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="Manual Command Console"
+    android:textSize="14sp"
+    android:textStyle="bold"
+    android:textColor="#666666"
+    android:layout_marginBottom="12dp" />
 
-            <EditText
-                android:id="@+id/manualCommandInput"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="Enter OpenPort command"
-                android:textSize="15sp"
-                android:textColor="#222222"
-                android:textColorHint="#888888"
-                android:layout_marginBottom="16dp" />
+<TextView
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="Command Preset"
+    android:textSize="14sp"
+    android:textStyle="bold"
+    android:textColor="#666666"
+    android:layout_marginBottom="6dp" />
 
-            <Button
-                android:id="@+id/sendManualCommandButton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="SEND MANUAL COMMAND"
-                android:layout_marginBottom="16dp" />
+<Spinner
+    android:id="@+id/commandPresetSpinner"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="12dp" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Manual Command Response"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                android:textColor="#666666"
-                android:layout_marginBottom="6dp" />
+<EditText
+    android:id="@+id/manualCommandInput"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:hint="Enter OpenPort command"
+    android:textSize="15sp"
+    android:textColor="#222222"
+    android:textColorHint="#888888"
+    android:layout_marginBottom="16dp" />
 
-            <TextView
-                android:id="@+id/manualCommandResponseText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="No response yet"
-                android:textSize="15sp"
-                android:textColor="#222222"
-                android:background="#F0F0F0"
-                android:padding="12dp" />
-        </LinearLayout>
+<Button
+    android:id="@+id/sendManualCommandButton"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:text="SEND MANUAL COMMAND"
+    android:layout_marginBottom="16dp" />
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="#FFFFFF"
-            android:padding="16dp"
-            android:layout_marginBottom="16dp">
+<TextView
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="Manual Command Response"
+    android:textSize="14sp"
+    android:textStyle="bold"
+    android:textColor="#666666"
+    android:layout_marginBottom="6dp" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Live Internal Log"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                android:textColor="#666666"
-                android:layout_marginBottom="12dp" />
+<TextView
+    android:id="@+id/manualCommandResponseText"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:text="No response yet"
+    android:textSize="15sp"
+    android:textColor="#222222"
+    android:background="#F0F0F0"
+    android:padding="12dp" />
 
-            <TextView
-                android:id="@+id/developerLogText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="No logs yet"
-                android:textSize="15sp"
-                android:textColor="#222222"
-                android:background="#F0F0F0"
-                android:padding="12dp"
-                android:typeface="monospace"
-                android:layout_marginBottom="16dp" />
+</LinearLayout>
 
-            <Button
-                android:id="@+id/clearLogsButton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="CLEAR LOGS" />
-        </LinearLayout>
+<LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="#FFFFFF"
+    android:padding="16dp"
+    android:layout_marginBottom="16dp">
 
-    </LinearLayout>
+<TextView
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="Live Internal Log"
+    android:textSize="14sp"
+    android:textStyle="bold"
+    android:textColor="#666666"
+    android:layout_marginBottom="12dp" />
+
+<TextView
+    android:id="@+id/developerLogText"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:text="No logs yet"
+    android:textSize="15sp"
+    android:textColor="#222222"
+    android:background="#F0F0F0"
+    android:padding="12dp"
+    android:typeface="monospace"
+    android:layout_marginBottom="16dp" />
+
+<Button
+    android:id="@+id/clearLogsButton"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:text="CLEAR LOGS" />
+
+</LinearLayout>
+
+</LinearLayout>
 </ScrollView>
