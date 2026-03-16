@@ -65,8 +65,18 @@ class MainActivity : AppCompatActivity() {
             currentDevice = device
 
             if (granted && device != null) {
+                deviceStateText.text = "Device: Tactrix OpenPort detected"
+                permissionStateText.text = "Permission: Granted"
+                statusMessageText.text = "OpenPort ready"
+
+                summaryOpenPortCommandText.text = "OpenPort Command: None"
+                summaryBusModeText.text = "Bus Mode: None"
+                summaryEcuQueryText.text = "ECU Query: None"
+                summaryResponseTypeText.text = "Response Type: None"
+                summaryErrorText.text = "Last Error: None"
+
                 EcuLogger.usb("USB permission granted")
-                refreshOpenPortStatusOnly()
+                refreshDeveloperLog()
                 Toast.makeText(this@MainActivity, "USB permission granted", Toast.LENGTH_SHORT).show()
             } else {
                 permissionStateText.text = "Permission: Denied"
