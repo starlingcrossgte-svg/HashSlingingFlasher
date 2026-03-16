@@ -18,6 +18,7 @@ import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import kotlin.concurrent.thread
 
 class MainActivity : AppCompatActivity() {
 
@@ -66,8 +67,7 @@ class MainActivity : AppCompatActivity() {
             when (action) {
                 ACTION_USB_PERMISSION -> {
                     val device = getUsbDeviceFromIntent(intent)
-                    val granted =
-                        intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)
+                    val granted = intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)
 
                     EcuLogger.usb("usbReceiver granted: $granted")
                     if (device != null) {
@@ -155,9 +155,16 @@ class MainActivity : AppCompatActivity() {
 
                     if (device == null || isTactrixDevice(device)) {
                         currentDevice = null
+
                         deviceStateText.text = "Device: Tactrix OpenPort not detected"
                         permissionStateText.text = "Permission: Unknown"
                         statusMessageText.text = "USB status unknown"
+
+                        lastCommandText.text = "Last Command: None"
+                        bytesSentText.text = "Bytes Sent: -"
+                        bytesReceivedText.text = "Bytes Received: -"
+                        responseHexText.text = "No response yet"
+                        manualCommandResponseText.text = "No response yet"
 
                         summaryOpenPortCommandText.text = "OpenPort Command: None"
                         summaryBusModeText.text = "Bus Mode: None"
@@ -396,10 +403,16 @@ class MainActivity : AppCompatActivity() {
         summaryOpenPortCommandText.text = "OpenPort Command: $command"
         summaryBusModeText.text = buildBusModeSummary(command)
         summaryEcuQueryText.text = "ECU Query: None"
+
         statusMessageText.text = "Sending command..."
         manualCommandResponseText.text = "Waiting for OpenPort response..."
+        responseHexText.text = "No response yet"
+        bytesSentText.text = "Bytes Sent: -"
+        bytesReceivedText.text = "Bytes Received: -"
+        summaryResponseTypeText.text = "Response Type: None"
+        summaryErrorText.text = "Last Error: None"
 
-        Thread {
+        thread {
             val result = UsbDeviceManager(this).sendCustomAsciiCommand(command)
 
             runOnUiThread {
@@ -408,12 +421,11 @@ class MainActivity : AppCompatActivity() {
                 responseHexText.text =
                     if (result.responseHex.isNotEmpty()) result.responseHex else "No response yet"
 
-                manualCommandResponseText.text =
-                    when {
-                        result.responseAscii.isNotEmpty() -> result.responseAscii.trim()
-                        result.responseHex.isNotEmpty() -> result.responseHex
-                        else -> result.statusMessage
-                    }
+                manualCommandResponseText.text = when {
+                    result.responseAscii.isNotEmpty() -> result.responseAscii.trim()
+                    result.responseHex.isNotEmpty() -> result.responseHex
+                    else -> result.statusMessage
+                }
 
                 statusMessageText.text =
                     if (result.success) "OpenPort command response received" else result.statusMessage
@@ -433,7 +445,7 @@ class MainActivity : AppCompatActivity() {
                 refreshDeveloperLog()
                 Toast.makeText(this, "Manual command sent", Toast.LENGTH_SHORT).show()
             }
-        }.start()
+        }
     }
 
     private fun buildBusModeSummary(command: String): String {
