@@ -52,56 +52,113 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var developerLogText: TextView
     private lateinit var clearLogsButton: Button
-    private lateinit var refreshButton: Button
+    private lateinit var refreshUsbButton: Button
 
     private var currentDevice: UsbDevice? = null
 
     private val usbReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent?) {
+        override fun onReceive(context: Context, intent: Intent?) {
+            if (intent == null) return
+
+            val action = intent.action ?: ""
             EcuLogger.usb("usbReceiver fired")
-            EcuLogger.usb("usbReceiver action: ${intent?.action}")
+            EcuLogger.usb("usbReceiver action: $action")
 
-            if (intent?.action != ACTION_USB_PERMISSION) {
-                EcuLogger.usb("usbReceiver ignored unexpected action")
-                refreshDeveloperLog()
-                return
-            }
+            when (action) {
+                ACTION_USB_PERMISSION -> {
+                    val device = getUsbDeviceFromIntent(intent)
+                    val granted = intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)
 
-            val device = getUsbDeviceFromIntent(intent)
-            val granted = intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)
+                    EcuLogger.usb("usbReceiver granted: $granted")
+                    if (device != null) {
+                        EcuLogger.usb("usbReceiver device: vendor=${device.vendorId} product=${device.productId}")
+                    } else {
+                        EcuLogger.usb("usbReceiver device: null")
+                    }
 
-            EcuLogger.usb("usbReceiver granted: $granted")
-            EcuLogger.usb(
-                if (device != null) {
-                    "usbReceiver device: vendor=${device.vendorId} product=${device.productId}"
-                } else {
-                    "usbReceiver device: null"
+                    currentDevice = device
+
+                    if (granted && device != null) {
+                        deviceStateText.text = "Device: Tactrix OpenPort detected"
+                        permissionStateText.text = "Permission: Granted"
+                        statusMessageText.text = "OpenPort ready"
+
+                        summaryOpenPortCommandText.text = "OpenPort Command: None"
+                        summaryBusModeText.text = "Bus Mode: None"
+                        summaryEcuQueryText.text = "ECU Query: None"
+                        summaryResponseTypeText.text = "Response Type: None"
+                        summaryErrorText.text = "Last Error: None"
+
+                        EcuLogger.usb("USB permission granted in receiver")
+                        Toast.makeText(this@MainActivity, "USB permission granted", Toast.LENGTH_SHORT).show()
+                    } else {
+                        permissionStateText.text = "Permission: Denied"
+                        statusMessageText.text = "USB permission denied"
+                        summaryErrorText.text = "Last Error: USB permission denied"
+
+                        EcuLogger.error("USB permission denied in receiver")
+                        Toast.makeText(this@MainActivity, "USB permission denied", Toast.LENGTH_SHORT).show()
+                    }
+
+                    refreshDeveloperLog()
                 }
-            )
 
-            currentDevice = device
+                UsbManager.ACTION_USB_DEVICE_ATTACHED -> {
+                    val device = getUsbDeviceFromIntent(intent)
+                    if (device != null) {
+                        EcuLogger.usb("USB device attached: vendor=${device.vendorId} product=${device.productId}")
+                    } else {
+                        EcuLogger.usb("USB device attached: device null")
+                    }
 
-            if (granted && device != null) {
-                deviceStateText.text = "Device: Tactrix OpenPort detected"
-                permissionStateText.text = "Permission: Granted"
-                statusMessageText.text = "OpenPort ready"
+                    if (device != null && isTactrixDevice(device)) {
+                        currentDevice = device
+                        deviceStateText.text = "Device: Tactrix OpenPort detected"
 
-                summaryOpenPortCommandText.text = "OpenPort Command: None"
-                summaryBusModeText.text = "Bus Mode: None"
-                summaryEcuQueryText.text = "ECU Query: None"
-                summaryResponseTypeText.text = "Response Type: None"
-                summaryErrorText.text = "Last Error: None"
+                        if (usbManager.hasPermission(device)) {
+                            permissionStateText.text = "Permission: Granted"
+                            statusMessageText.text = "OpenPort ready"
+                            summaryErrorText.text = "Last Error: None"
+                            EcuLogger.usb("Attached Tactrix already has permission")
+                        } else {
+                            permissionStateText.text = "Permission: Pending"
+                            statusMessageText.text = "Requesting USB permission..."
+                            EcuLogger.usb("Requesting USB permission after attach event")
+                            requestUsbPermission(device)
+                        }
+                    }
 
-                EcuLogger.usb("USB permission granted in receiver")
-                refreshDeveloperLog()
-                Toast.makeText(this@MainActivity, "USB permission granted", Toast.LENGTH_SHORT).show()
-            } else {
-                permissionStateText.text = "Permission: Denied"
-                statusMessageText.text = "USB permission denied"
-                summaryErrorText.text = "Last Error: USB permission denied"
-                EcuLogger.error("USB permission denied in receiver")
-                refreshDeveloperLog()
-                Toast.makeText(this@MainActivity, "USB permission denied", Toast.LENGTH_SHORT).show()
+                    refreshDeveloperLog()
+                }
+
+                UsbManager.ACTION_USB_DEVICE_DETACHED -> {
+                    val device = getUsbDeviceFromIntent(intent)
+                    if (device != null) {
+                        EcuLogger.usb("USB device detached: vendor=${device.vendorId} product=${device.productId}")
+                    } else {
+                        EcuLogger.usb("USB device detached: device null")
+                    }
+
+                    if (device == null || isTactrixDevice(device)) {
+                        currentDevice = null
+                        deviceStateText.text = "Device: Tactrix OpenPort not detected"
+                        permissionStateText.text = "Permission: Unknown"
+                        statusMessageText.text = "USB status unknown"
+
+                        summaryOpenPortCommandText.text = "OpenPort Command: None"
+                        summaryBusModeText.text = "Bus Mode: None"
+                        summaryEcuQueryText.text = "ECU Query: None"
+                        summaryResponseTypeText.text = "Response Type: None"
+                        summaryErrorText.text = "Last Error: Device disconnected"
+                    }
+
+                    refreshDeveloperLog()
+                }
+
+                else -> {
+                    EcuLogger.usb("usbReceiver ignored unexpected action")
+                    refreshDeveloperLog()
+                }
             }
         }
     }
@@ -134,7 +191,7 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this, "Logs cleared", Toast.LENGTH_SHORT).show()
         }
 
-        refreshButton.setOnClickListener {
+        refreshUsbButton.setOnClickListener {
             refreshOpenPortStatusOnly()
             Toast.makeText(this, "USB status refreshed", Toast.LENGTH_SHORT).show()
         }
@@ -173,7 +230,7 @@ class MainActivity : AppCompatActivity() {
 
         developerLogText = findViewById(R.id.developerLogText)
         clearLogsButton = findViewById(R.id.clearLogsButton)
-        refreshButton = findViewById(R.id.refreshButton)
+        refreshUsbButton = findViewById(R.id.refreshUsbButton)
     }
 
     private fun setupCommandPresetSpinner() {
@@ -182,7 +239,7 @@ class MainActivity : AppCompatActivity() {
             "ati — firmware version",
             "atsp0 — auto protocol detect",
             "0100 — OBD CAN test",
-            "ato6 0 500000 0 — force CAN 500k"
+            "atpb 500000 0 — force CAN 500k"
         )
 
         val presetCommands = listOf(
@@ -190,7 +247,7 @@ class MainActivity : AppCompatActivity() {
             "ati",
             "atsp0",
             "0100",
-            "ato6 0 500000 0"
+            "atpb 500000 0"
         )
 
         val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, presetLabels)
@@ -216,29 +273,33 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun registerUsbReceiver() {
-        val filter = IntentFilter(ACTION_USB_PERMISSION)
+        val filter = IntentFilter().apply {
+            addAction(ACTION_USB_PERMISSION)
+            addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED)
+            addAction(UsbManager.ACTION_USB_DEVICE_DETACHED)
+        }
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(usbReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
         } else {
             registerReceiver(usbReceiver, filter)
         }
-        EcuLogger.usb("USB permission receiver registered")
+
+        EcuLogger.usb("USB receiver registered")
         refreshDeveloperLog()
     }
 
     private fun unregisterReceiverSafe() {
         try {
             unregisterReceiver(usbReceiver)
-            EcuLogger.usb("USB permission receiver unregistered")
+            EcuLogger.usb("USB receiver unregistered")
             refreshDeveloperLog()
         } catch (_: IllegalArgumentException) {
         }
     }
 
     private fun refreshOpenPortStatusOnly() {
-        val tactrixDevice = usbManager.deviceList.values.firstOrNull {
-            it.vendorId == TACTRIX_VENDOR_ID && it.productId == TACTRIX_PRODUCT_ID
-        }
+        val tactrixDevice = usbManager.deviceList.values.firstOrNull { isTactrixDevice(it) }
 
         currentDevice = tactrixDevice
 
@@ -246,11 +307,13 @@ class MainActivity : AppCompatActivity() {
             deviceStateText.text = "Device: Tactrix OpenPort not detected"
             permissionStateText.text = "Permission: Unknown"
             statusMessageText.text = "USB status unknown"
+
             summaryOpenPortCommandText.text = "OpenPort Command: None"
             summaryBusModeText.text = "Bus Mode: None"
             summaryEcuQueryText.text = "ECU Query: None"
             summaryResponseTypeText.text = "Response Type: None"
             summaryErrorText.text = "Last Error: Device not detected"
+
             EcuLogger.usb("Tactrix device not found")
             refreshDeveloperLog()
             return
@@ -275,7 +338,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun requestUsbPermission(device: UsbDevice) {
         val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         } else {
             PendingIntent.FLAG_UPDATE_CURRENT
         }
@@ -301,9 +364,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun sendManualCommand(command: String) {
-        val tactrixDevice = usbManager.deviceList.values.firstOrNull {
-            it.vendorId == TACTRIX_VENDOR_ID && it.productId == TACTRIX_PRODUCT_ID
-        }
+        val tactrixDevice = usbManager.deviceList.values.firstOrNull { isTactrixDevice(it) }
 
         if (tactrixDevice == null) {
             statusMessageText.text = "OpenPort not detected"
@@ -336,9 +397,11 @@ class MainActivity : AppCompatActivity() {
             if (result.responseHex.isNotEmpty()) result.responseHex else "No response yet"
 
         manualCommandResponseText.text =
-            if (result.responseAscii.isNotEmpty()) result.responseAscii.trim()
-            else if (result.responseHex.isNotEmpty()) result.responseHex
-            else result.statusMessage
+            when {
+                result.responseAscii.isNotEmpty() -> result.responseAscii.trim()
+                result.responseHex.isNotEmpty() -> result.responseHex
+                else -> result.statusMessage
+            }
 
         statusMessageText.text =
             if (result.success) "OpenPort command response received" else result.statusMessage
@@ -364,8 +427,8 @@ class MainActivity : AppCompatActivity() {
 
         return when {
             normalized == "ata" -> "Bus Mode: None"
-            normalized.startsWith("ato6") && normalized.contains("500000") -> "Bus Mode: CAN 500000"
-            normalized.startsWith("ato6") -> "Bus Mode: CAN"
+            normalized.startsWith("atpb") && normalized.contains("500000") -> "Bus Mode: CAN 500000"
+            normalized.startsWith("atsp") -> "Bus Mode: CAN"
             else -> "Bus Mode: Manual OpenPort"
         }
     }
@@ -381,5 +444,9 @@ class MainActivity : AppCompatActivity() {
             @Suppress("DEPRECATION")
             intent.getParcelableExtra(UsbManager.EXTRA_DEVICE)
         }
+    }
+
+    private fun isTactrixDevice(device: UsbDevice): Boolean {
+        return device.vendorId == TACTRIX_VENDOR_ID && device.productId == TACTRIX_PRODUCT_ID
     }
 }
