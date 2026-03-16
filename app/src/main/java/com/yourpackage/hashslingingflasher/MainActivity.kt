@@ -9,6 +9,7 @@ import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
 import android.os.Build
 import android.os.Bundle
+import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Button
@@ -199,7 +200,7 @@ class MainActivity : AppCompatActivity() {
         commandPresetSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(
                 parent: AdapterView<*>?,
-                view: android.view.View?,
+                view: View?,
                 position: Int,
                 id: Long
             ) {
@@ -272,32 +273,31 @@ class MainActivity : AppCompatActivity() {
         refreshDeveloperLog()
     }
 
-private fun requestUsbPermission(device: UsbDevice) {
-    val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-        PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-    } else {
-        PendingIntent.FLAG_UPDATE_CURRENT
-    }
+    private fun requestUsbPermission(device: UsbDevice) {
+        val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        } else {
+            PendingIntent.FLAG_UPDATE_CURRENT
+        }
 
-    EcuLogger.usb("requestUsbPermission called")
-    EcuLogger.usb("requestUsbPermission flags: $flags")
-    EcuLogger.usb("requestUsbPermission device vendor=${device.vendorId} product=${device.productId}")
+        EcuLogger.usb("requestUsbPermission called")
+        EcuLogger.usb("requestUsbPermission flags: $flags")
+        EcuLogger.usb("requestUsbPermission device vendor=${device.vendorId} product=${device.productId}")
 
-    val permissionIntent = Intent(ACTION_USB_PERMISSION).apply {
-        setPackage(packageName)
-    }
+        val permissionIntent = Intent(ACTION_USB_PERMISSION).apply {
+            setPackage(packageName)
+        }
 
-    val pendingIntent = PendingIntent.getBroadcast(
-        this,
-        0,
-        permissionIntent,
-        flags
-    )
+        val pendingIntent = PendingIntent.getBroadcast(
+            this,
+            0,
+            permissionIntent,
+            flags
+        )
 
-    usbManager.requestPermission(device, pendingIntent)
-    EcuLogger.usb("usbManager.requestPermission invoked")
-    refreshDeveloperLog()
-}
+        usbManager.requestPermission(device, pendingIntent)
+        EcuLogger.usb("usbManager.requestPermission invoked")
+        refreshDeveloperLog()
     }
 
     private fun sendManualCommand(command: String) {
