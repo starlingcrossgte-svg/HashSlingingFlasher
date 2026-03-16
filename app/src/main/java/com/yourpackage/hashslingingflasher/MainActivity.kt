@@ -176,12 +176,23 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupCommandPresetSpinner() {
-        val presets = listOf(
+        val presetLabels = listOf(
+            "ata — wake OpenPort",
+            "ati — firmware version",
+            "atsp0 — auto protocol detect",
+            "0100 — OBD CAN test",
+            "ato6 0 500000 0 — force CAN 500k"
+        )
+
+        val presetCommands = listOf(
             "ata",
+            "ati",
+            "atsp0",
+            "0100",
             "ato6 0 500000 0"
         )
 
-        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, presets)
+        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, presetLabels)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         commandPresetSpinner.adapter = adapter
 
@@ -192,7 +203,7 @@ class MainActivity : AppCompatActivity() {
                 position: Int,
                 id: Long
             ) {
-                manualCommandInput.setText(presets[position])
+                manualCommandInput.setText(presetCommands[position])
             }
 
             override fun onNothingSelected(parent: AdapterView<*>?) {
@@ -233,7 +244,7 @@ class MainActivity : AppCompatActivity() {
         if (tactrixDevice == null) {
             deviceStateText.text = "Device: Tactrix OpenPort not detected"
             permissionStateText.text = "Permission: Unknown"
-            statusMessageText.text = "USB Status Unknown"
+            statusMessageText.text = "USB status unknown"
             summaryOpenPortCommandText.text = "OpenPort Command: None"
             summaryBusModeText.text = "Bus Mode: None"
             summaryEcuQueryText.text = "ECU Query: None"
