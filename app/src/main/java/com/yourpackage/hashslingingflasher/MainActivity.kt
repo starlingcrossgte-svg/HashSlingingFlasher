@@ -52,7 +52,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var developerLogText: TextView
     private lateinit var clearLogsButton: Button
-    private lateinit var refreshUsbButton: Button
+    private lateinit var refreshButton: Button
 
     private var currentDevice: UsbDevice? = null
 
@@ -191,7 +191,7 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this, "Logs cleared", Toast.LENGTH_SHORT).show()
         }
 
-        refreshUsbButton.setOnClickListener {
+        refreshButton.setOnClickListener {
             refreshOpenPortStatusOnly()
             Toast.makeText(this, "USB status refreshed", Toast.LENGTH_SHORT).show()
         }
@@ -230,7 +230,7 @@ class MainActivity : AppCompatActivity() {
 
         developerLogText = findViewById(R.id.developerLogText)
         clearLogsButton = findViewById(R.id.clearLogsButton)
-        refreshUsbButton = findViewById(R.id.refreshUsbButton)
+        refreshButton = findViewById(R.id.refreshButton)
     }
 
     private fun setupCommandPresetSpinner() {
