@@ -239,7 +239,7 @@ class MainActivity : AppCompatActivity() {
             "ati — firmware version",
             "atsp0 — auto protocol detect",
             "0100 — OBD CAN test",
-            "atpb 500000 0 — force CAN 500k"
+            "ato6 0 500000 0 — force CAN 500k"
         )
 
         val presetCommands = listOf(
@@ -247,7 +247,7 @@ class MainActivity : AppCompatActivity() {
             "ati",
             "atsp0",
             "0100",
-            "atpb 500000 0"
+            "ato6 0 500000 0"
         )
 
         val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, presetLabels)
