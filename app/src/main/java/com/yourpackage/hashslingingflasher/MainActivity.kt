@@ -85,11 +85,7 @@ class MainActivity : AppCompatActivity() {
                         permissionStateText.text = "Permission: Granted"
                         statusMessageText.text = "OpenPort ready"
 
-                        summaryOpenPortCommandText.text = "OpenPort Command: None"
-                        summaryBusModeText.text = "Bus Mode: None"
-                        summaryEcuQueryText.text = "ECU Query: None"
-                        summaryResponseTypeText.text = "Response Type: None"
-                        summaryErrorText.text = "Last Error: None"
+                        resetCommandDisplayToNeutral()
 
                         EcuLogger.usb("USB permission granted in receiver")
                         refreshDeveloperLog()
@@ -130,7 +126,7 @@ class MainActivity : AppCompatActivity() {
                         if (usbManager.hasPermission(device)) {
                             permissionStateText.text = "Permission: Granted"
                             statusMessageText.text = "OpenPort ready"
-                            summaryErrorText.text = "Last Error: None"
+                            resetCommandDisplayToNeutral()
                             EcuLogger.usb("Attached Tactrix already has permission")
                         } else {
                             permissionStateText.text = "Permission: Pending"
@@ -207,7 +203,7 @@ class MainActivity : AppCompatActivity() {
 
         clearLogsButton.setOnClickListener {
             EcuLogger.clear()
-            refreshDeveloperLog()
+            refreshOpenPortStatusOnly()
             Toast.makeText(this, "Logs cleared", Toast.LENGTH_SHORT).show()
         }
 
@@ -344,7 +340,7 @@ class MainActivity : AppCompatActivity() {
         if (usbManager.hasPermission(tactrixDevice)) {
             permissionStateText.text = "Permission: Granted"
             statusMessageText.text = "OpenPort ready"
-            summaryErrorText.text = "Last Error: None"
+            resetCommandDisplayToNeutral()
             EcuLogger.usb("USB permission already granted")
         } else {
             permissionStateText.text = "Permission: Pending"
@@ -354,6 +350,20 @@ class MainActivity : AppCompatActivity() {
         }
 
         refreshDeveloperLog()
+    }
+
+    private fun resetCommandDisplayToNeutral() {
+        lastCommandText.text = "Last Command: None"
+        bytesSentText.text = "Bytes Sent: -"
+        bytesReceivedText.text = "Bytes Received: -"
+        responseHexText.text = "No response yet"
+        manualCommandResponseText.text = "No response yet"
+
+        summaryOpenPortCommandText.text = "OpenPort Command: None"
+        summaryBusModeText.text = "Bus Mode: None"
+        summaryEcuQueryText.text = "ECU Query: None"
+        summaryResponseTypeText.text = "Response Type: None"
+        summaryErrorText.text = "Last Error: None"
     }
 
     private fun requestUsbPermission(device: UsbDevice) {
