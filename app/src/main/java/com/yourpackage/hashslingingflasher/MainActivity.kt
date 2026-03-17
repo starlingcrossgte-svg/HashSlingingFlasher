@@ -28,6 +28,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var usbManager: UsbManager
     private lateinit var usbPermissionHelper: UsbPermissionHelper
     private lateinit var openPortStatusPresenter: OpenPortStatusPresenter
+    private lateinit var manualCommandPresenter: ManualCommandPresenter
 
     private lateinit var appTitleText: TextView
     private lateinit var statusMessageText: TextView
@@ -189,6 +190,20 @@ class MainActivity : AppCompatActivity() {
             developerLogText = developerLogText
         )
 
+        manualCommandPresenter = ManualCommandPresenter(
+            statusMessageText = statusMessageText,
+            lastCommandText = lastCommandText,
+            bytesSentText = bytesSentText,
+            bytesReceivedText = bytesReceivedText,
+            responseHexText = responseHexText,
+            summaryOpenPortCommandText = summaryOpenPortCommandText,
+            summaryBusModeText = summaryBusModeText,
+            summaryEcuQueryText = summaryEcuQueryText,
+            summaryResponseTypeText = summaryResponseTypeText,
+            summaryErrorText = summaryErrorText,
+            manualCommandResponseText = manualCommandResponseText
+        )
+
         setupCommandPresetSpinner()
         registerUsbReceiver()
 
@@ -346,17 +361,14 @@ class MainActivity : AppCompatActivity() {
         }
 
         if (tactrixDevice == null) {
-            statusMessageText.text = "OpenPort not detected"
-            manualCommandResponseText.text = "No device connected"
-            summaryErrorText.text = "Last Error: Device not detected"
+            manualCommandPresenter.showNoDeviceConnected()
             EcuLogger.error("Manual command failed: Tactrix device not found")
             openPortStatusPresenter.refreshDeveloperLog()
             return
         }
 
         if (!usbManager.hasPermission(tactrixDevice)) {
-            statusMessageText.text = "Requesting USB permission..."
-            manualCommandResponseText.text = "Permission required"
+            manualCommandPresenter.showPermissionRequired()
             EcuLogger.usb("Manual command requested USB permission")
             usbPermissionHelper.requestUsbPermission(tactrixDevice, ACTION_USB_PERMISSION)
             openPortStatusPresenter.refreshDeveloperLog()
@@ -365,51 +377,13 @@ class MainActivity : AppCompatActivity() {
 
         val interrogator = OpenPortInterrogator(this)
         val profile = interrogator.profileCommand(command)
-
-        lastCommandText.text = "Last Command: $command"
-        summaryOpenPortCommandText.text = "OpenPort Command: ${profile.displayCommand}"
-        summaryBusModeText.text = profile.busModeSummary
-        summaryEcuQueryText.text = profile.interrogationPath
-
-        statusMessageText.text = "Sending command..."
-        manualCommandResponseText.text = "Waiting for OpenPort response..."
-        responseHexText.text = "No response yet"
-        bytesSentText.text = "Bytes Sent: -"
-        bytesReceivedText.text = "Bytes Received: -"
-        summaryResponseTypeText.text = "Response Type: None"
-        summaryErrorText.text = "Last Error: None"
+        manualCommandPresenter.showCommandSending(command, profile)
 
         thread {
             val result = interrogator.runManualCommand(command)
 
             runOnUiThread {
-                bytesSentText.text = "Bytes Sent: ${result.transportResult.bytesSent}"
-                bytesReceivedText.text = "Bytes Received: ${result.transportResult.bytesReceived}"
-
-                responseHexText.text = if (result.transportResult.responseHex.isNotEmpty()) {
-                    result.transportResult.responseHex
-                } else {
-                    "No response yet"
-                }
-
-                manualCommandResponseText.text = when {
-                    result.transportResult.responseAscii.isNotEmpty() ->
-                        result.transportResult.responseAscii.trim()
-
-                    result.transportResult.responseHex.isNotEmpty() ->
-                        result.transportResult.responseHex
-
-                    else ->
-                        result.transportResult.statusMessage
-                }
-
-                statusMessageText.text = result.statusSummary
-                summaryOpenPortCommandText.text =
-                    "OpenPort Command: ${result.profile.displayCommand}"
-                summaryBusModeText.text = result.profile.busModeSummary
-                summaryEcuQueryText.text = result.profile.interrogationPath
-                summaryResponseTypeText.text = result.responseTypeSummary
-                summaryErrorText.text = result.errorSummary
+                manualCommandPresenter.showCommandResult(result)
 
                 EcuLogger.main("Manual command sent: $command")
                 EcuLogger.main(result.transportResult.statusMessage)
