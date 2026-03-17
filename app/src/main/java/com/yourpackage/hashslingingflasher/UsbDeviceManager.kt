@@ -130,29 +130,36 @@ class UsbDeviceManager(private val context: Context) {
         )
 
         try {
-            val wakeResult = sendAsciiCommand(
-                connection = session.connection,
-                endpointOut = session.endpointOut,
-                endpointIn = session.endpointIn,
-                commandLabel = "Manual command ATA wake",
-                commandString = "ata\r\n"
-            )
-
-            if (!wakeResult.responseAscii.contains("aro", ignoreCase = true)) {
-                return TactrixTestResult(
-                    false,
-                    "OpenPort did not respond to ATA wake",
-                    wakeResult.bytesSent,
-                    wakeResult.bytesReceived,
-                    wakeResult.responseHex,
-                    wakeResult.responseAscii
-                )
-            }
-
             val normalizedCommand = if (command.endsWith("\r\n")) {
                 command
             } else {
                 "$command\r\n"
+            }
+
+            val trimmedLowerCommand = command.trim().lowercase()
+            val shouldSendAtaWake = trimmedLowerCommand != "ata"
+
+            if (shouldSendAtaWake) {
+                val wakeResult = sendAsciiCommand(
+                    connection = session.connection,
+                    endpointOut = session.endpointOut,
+                    endpointIn = session.endpointIn,
+                    commandLabel = "Manual command ATA wake",
+                    commandString = "ata\r\n"
+                )
+
+                if (!wakeResult.responseAscii.contains("aro", ignoreCase = true)) {
+                    return TactrixTestResult(
+                        false,
+                        "OpenPort did not respond to ATA wake",
+                        wakeResult.bytesSent,
+                        wakeResult.bytesReceived,
+                        wakeResult.responseHex,
+                        wakeResult.responseAscii
+                    )
+                }
+            } else {
+                EcuLogger.usb("Skipping automatic ATA wake because command is ATA")
             }
 
             val result = sendAsciiCommand(
