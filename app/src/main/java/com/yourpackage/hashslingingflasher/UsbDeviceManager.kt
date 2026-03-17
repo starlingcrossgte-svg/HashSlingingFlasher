@@ -354,7 +354,9 @@ class UsbDeviceManager(private val context: Context) {
             0x00,
             0x00,
             0x00,
-            0x08
+            0x08,
+            0x00,
+            0x00
         )
 
         val headerResult = sendAsciiCommand(
