@@ -319,18 +319,6 @@ class UsbDeviceManager(private val context: Context) {
             0x08
         )
 
-        val headerResult = sendAsciiCommand(
-            connection = connection,
-            endpointOut = endpointOut,
-            endpointIn = endpointIn,
-            commandLabel = "Subaru SSM query header command",
-            commandString = "atg ${canFrame.size}\r\n"
-        )
-
-        if (headerResult.bytesReceived < 0) {
-            return headerResult
-        }
-
         EcuLogger.usb("Sending Subaru SSM raw CAN frame")
         EcuLogger.usb("CAN frame hex: ${toHex(canFrame)}")
 
