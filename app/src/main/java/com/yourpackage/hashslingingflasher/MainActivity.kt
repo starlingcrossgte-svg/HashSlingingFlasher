@@ -23,7 +23,9 @@ import kotlin.concurrent.thread
 class MainActivity : AppCompatActivity() {
 
     companion object {
-        private const val ACTION_USB_PERMISSION = "com.hashslingingflasher.USB_PERMISSION"
+        private const val ACTION_USB_PERMISSION =
+            "com.hashslingingflasher.USB_PERMISSION"
+
         private const val TACTRIX_VENDOR_ID = 1027
         private const val TACTRIX_PRODUCT_ID = 52301
     }
@@ -67,9 +69,12 @@ class MainActivity : AppCompatActivity() {
             when (action) {
                 ACTION_USB_PERMISSION -> {
                     val device = getUsbDeviceFromIntent(intent)
-                    val granted = intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)
+                    val granted = intent.getBooleanExtra(
+                        UsbManager.EXTRA_PERMISSION_GRANTED,
+                        false
+                    )
 
-                    EcuLogger.usb("usbReceiver granted: $granted")
+                    EcuLogger.usb("usbReceiver permission grant=$granted")
                     if (device != null) {
                         EcuLogger.usb(
                             "usbReceiver device: vendor=${device.vendorId} product=${device.productId}"
@@ -80,7 +85,7 @@ class MainActivity : AppCompatActivity() {
 
                     currentDevice = device
 
-                    if (granted && device != null) {
+                    if (granted && device != null && isTactrixDevice(device)) {
                         deviceStateText.text = "Device: Tactrix OpenPort detected"
                         permissionStateText.text = "Permission: Granted"
                         statusMessageText.text = "OpenPort ready"
@@ -88,6 +93,7 @@ class MainActivity : AppCompatActivity() {
 
                         EcuLogger.usb("USB permission granted in receiver")
                         refreshDeveloperLog()
+
                         Toast.makeText(
                             this@MainActivity,
                             "USB permission granted",
@@ -100,6 +106,7 @@ class MainActivity : AppCompatActivity() {
 
                         EcuLogger.error("USB permission denied in receiver")
                         refreshDeveloperLog()
+
                         Toast.makeText(
                             this@MainActivity,
                             "USB permission denied",
@@ -244,38 +251,41 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupCommandPresetSpinner() {
         val presetLabels = listOf(
-            "ata — wake OpenPort",
-            "ati — firmware version",
-            "atsp0 — auto protocol detect",
-            "0100 — raw command",
-            "ato6 0 500000 0 — force CAN 500k"
+            "ata - wake OpenPort",
+            "ati - firmware version",
+            "atsp0 - auto protocol detect",
+            "ato6 0 500000 0 - force CAN 500k"
         )
 
         val presetCommands = listOf(
             "ata",
             "ati",
             "atsp0",
-            "0100",
             "ato6 0 500000 0"
         )
 
-        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, presetLabels)
+        val adapter = ArrayAdapter(
+            this,
+            android.R.layout.simple_spinner_item,
+            presetLabels
+        )
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         commandPresetSpinner.adapter = adapter
 
-        commandPresetSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(
-                parent: AdapterView<*>?,
-                view: View?,
-                position: Int,
-                id: Long
-            ) {
-                manualCommandInput.setText(presetCommands[position])
-            }
+        commandPresetSpinner.onItemSelectedListener =
+            object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(
+                    parent: AdapterView<*>?,
+                    view: View?,
+                    position: Int,
+                    id: Long
+                ) {
+                    manualCommandInput.setText(presetCommands[position])
+                }
 
-            override fun onNothingSelected(parent: AdapterView<*>?) {
+                override fun onNothingSelected(parent: AdapterView<*>?) {
+                }
             }
-        }
 
         commandPresetSpinner.setSelection(0)
         manualCommandInput.setText("ata")
@@ -309,7 +319,6 @@ class MainActivity : AppCompatActivity() {
 
     private fun refreshOpenPortStatusOnly() {
         val tactrixDevice = usbManager.deviceList.values.firstOrNull { isTactrixDevice(it) }
-
         currentDevice = tactrixDevice
 
         if (tactrixDevice == null) {
@@ -366,7 +375,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun requestUsbPermission(device: UsbDevice) {
-        val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         } else {
             PendingIntent.FLAG_UPDATE_CURRENT
@@ -415,30 +424,16 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        val normalizedCommand = command.trim().lowercase()
-        val isRawEcuInterrogation = normalizedCommand == "0100"
+        val interrogator = OpenPortInterrogator(this)
+        val profile = interrogator.profileCommand(command)
 
         lastCommandText.text = "Last Command: $command"
-        summaryOpenPortCommandText.text = "OpenPort Command: $command"
-        summaryBusModeText.text = buildBusModeSummary(command)
-        summaryEcuQueryText.text = if (isRawEcuInterrogation) {
-            "Interrogation Path: Raw transmit test"
-        } else {
-            "Interrogation Path: OpenPort ASCII"
-        }
+        summaryOpenPortCommandText.text = "OpenPort Command: ${profile.displayCommand}"
+        summaryBusModeText.text = profile.busModeSummary
+        summaryEcuQueryText.text = profile.interrogationPath
 
-        statusMessageText.text = if (isRawEcuInterrogation) {
-            "Sending raw transmit test..."
-        } else {
-            "Sending command..."
-        }
-
-        manualCommandResponseText.text = if (isRawEcuInterrogation) {
-            "Waiting for raw transmit result..."
-        } else {
-            "Waiting for OpenPort response..."
-        }
-
+        statusMessageText.text = "Sending command..."
+        manualCommandResponseText.text = "Waiting for OpenPort response..."
         responseHexText.text = "No response yet"
         bytesSentText.text = "Bytes Sent: -"
         bytesReceivedText.text = "Bytes Received: -"
@@ -446,68 +441,39 @@ class MainActivity : AppCompatActivity() {
         summaryErrorText.text = "Last Error: None"
 
         thread {
-            val result = if (isRawEcuInterrogation) {
-                UsbDeviceManager(this).openTactrixChannel()
-            } else {
-                UsbDeviceManager(this).sendCustomAsciiCommand(command)
-            }
+            val result = interrogator.runManualCommand(command)
 
             runOnUiThread {
-                bytesSentText.text = "Bytes Sent: ${result.bytesSent}"
-                bytesReceivedText.text = "Bytes Received: ${result.bytesReceived}"
-                responseHexText.text =
-                    if (result.responseHex.isNotEmpty()) result.responseHex else "No response yet"
+                bytesSentText.text = "Bytes Sent: ${result.transportResult.bytesSent}"
+                bytesReceivedText.text = "Bytes Received: ${result.transportResult.bytesReceived}"
+                responseHexText.text = if (result.transportResult.responseHex.isNotEmpty()) {
+                    result.transportResult.responseHex
+                } else {
+                    "No response yet"
+                }
 
                 manualCommandResponseText.text = when {
-                    result.responseAscii.isNotEmpty() -> result.responseAscii.trim()
-                    result.responseHex.isNotEmpty() -> result.responseHex
-                    else -> result.statusMessage
-                }
-
-                statusMessageText.text = when {
-                    isRawEcuInterrogation && result.success &&
-                        result.statusMessage.contains("raw transmit", ignoreCase = true) ->
-                        "Raw transmit completed"
-
-                    result.success ->
-                        "OpenPort command response received"
-
+                    result.transportResult.responseAscii.isNotEmpty() ->
+                        result.transportResult.responseAscii.trim()
+                    result.transportResult.responseHex.isNotEmpty() ->
+                        result.transportResult.responseHex
                     else ->
-                        result.statusMessage
+                        result.transportResult.statusMessage
                 }
 
-                summaryResponseTypeText.text = when {
-                    isRawEcuInterrogation && result.success &&
-                        result.statusMessage.contains("raw transmit", ignoreCase = true) ->
-                        "Response Type: Raw transmit only"
-
-                    result.responseAscii.isNotEmpty() || result.responseHex.isNotEmpty() ->
-                        "Response Type: OpenPort response"
-
-                    else ->
-                        "Response Type: None"
-                }
-
-                summaryErrorText.text =
-                    if (result.success) "Last Error: None" else "Last Error: ${result.statusMessage}"
+                statusMessageText.text = result.statusSummary
+                summaryOpenPortCommandText.text =
+                    "OpenPort Command: ${result.profile.displayCommand}"
+                summaryBusModeText.text = result.profile.busModeSummary
+                summaryEcuQueryText.text = result.profile.interrogationPath
+                summaryResponseTypeText.text = result.responseTypeSummary
+                summaryErrorText.text = result.errorSummary
 
                 EcuLogger.main("Manual command sent: $command")
-                EcuLogger.main(result.statusMessage)
+                EcuLogger.main(result.transportResult.statusMessage)
                 refreshDeveloperLog()
                 Toast.makeText(this, "Manual command sent", Toast.LENGTH_SHORT).show()
             }
-        }
-    }
-
-    private fun buildBusModeSummary(command: String): String {
-        val normalized = command.trim().lowercase()
-
-        return when {
-            normalized == "ata" -> "Bus Mode: None"
-            normalized.startsWith("ato6") && normalized.contains("500000") -> "Bus Mode: CAN 500000"
-            normalized.startsWith("atsp") -> "Bus Mode: CAN"
-            normalized == "0100" -> "Bus Mode: CAN 500000"
-            else -> "Bus Mode: Manual OpenPort"
         }
     }
 
@@ -525,6 +491,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun isTactrixDevice(device: UsbDevice): Boolean {
-        return device.vendorId == TACTRIX_VENDOR_ID && device.productId == TACTRIX_PRODUCT_ID
+        return device.vendorId == TACTRIX_VENDOR_ID &&
+            device.productId == TACTRIX_PRODUCT_ID
     }
 }
