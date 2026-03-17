@@ -359,24 +359,34 @@ class UsbDeviceManager(private val context: Context) {
             0x00
         )
 
-        val header = "atg ${canFrame.size}\r\n".toByteArray(Charset.forName("US-ASCII"))
-        val packet = ByteArray(header.size + canFrame.size)
+        val headerResult = sendAsciiCommand(
+            connection = connection,
+            endpointOut = endpointOut,
+            endpointIn = endpointIn,
+            commandLabel = "ECU query header command",
+            commandString = "atg ${canFrame.size}\r\n"
+        )
 
-        System.arraycopy(header, 0, packet, 0, header.size)
-        System.arraycopy(canFrame, 0, packet, header.size, canFrame.size)
+        if (headerResult.bytesReceived < 0) {
+            return CommandResult(
+                bytesSent = headerResult.bytesSent,
+                bytesReceived = headerResult.bytesReceived,
+                responseHex = headerResult.responseHex,
+                responseAscii = headerResult.responseAscii,
+                responseBytes = headerResult.responseBytes
+            )
+        }
 
-        EcuLogger.usb("Sending ECU OBD CAN query")
-        EcuLogger.usb("Command text: atg ${canFrame.size}\\r\\n + raw CAN frame")
+        EcuLogger.usb("Sending ECU OBD raw CAN frame")
         EcuLogger.usb("CAN frame hex: ${toHex(canFrame)}")
-        EcuLogger.usb("Packet length: ${packet.size}")
-        EcuLogger.usb("Packet hex: ${toHex(packet)}")
+        EcuLogger.usb("Packet length: ${canFrame.size}")
         EcuLogger.usb("Write timeout ms: $WRITE_TIMEOUT_MS")
         EcuLogger.usb("Read timeout ms: $READ_TIMEOUT_MS")
 
         val sent = connection.bulkTransfer(
             endpointOut,
-            packet,
-            packet.size,
+            canFrame,
+            canFrame.size,
             WRITE_TIMEOUT_MS
         )
 
