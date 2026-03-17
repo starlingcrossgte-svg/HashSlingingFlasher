@@ -8,8 +8,6 @@ import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
 import android.os.Build
 import android.os.Bundle
-import android.widget.AdapterView
-import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Spinner
@@ -29,6 +27,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var usbPermissionHelper: UsbPermissionHelper
     private lateinit var openPortStatusPresenter: OpenPortStatusPresenter
     private lateinit var manualCommandPresenter: ManualCommandPresenter
+    private lateinit var commandPresetHelper: CommandPresetHelper
 
     private lateinit var appTitleText: TextView
     private lateinit var statusMessageText: TextView
@@ -204,7 +203,12 @@ class MainActivity : AppCompatActivity() {
             manualCommandResponseText = manualCommandResponseText
         )
 
-        setupCommandPresetSpinner()
+        commandPresetHelper = CommandPresetHelper(
+            spinner = commandPresetSpinner,
+            manualCommandInput = manualCommandInput
+        )
+
+        commandPresetHelper.bind()
         registerUsbReceiver()
 
         appTitleText.text = "HashSlingingFlasher"
@@ -259,47 +263,6 @@ class MainActivity : AppCompatActivity() {
 
         developerLogText = findViewById(R.id.developerLogText)
         clearLogsButton = findViewById(R.id.clearLogsButton)
-    }
-
-    private fun setupCommandPresetSpinner() {
-        val presetLabels = listOf(
-            "ata - wake OpenPort",
-            "ati - firmware version",
-            "atsp0 - auto protocol detect",
-            "at06 0 500000 0 - force CAN 500k"
-        )
-
-        val presetCommands = listOf(
-            "ata",
-            "ati",
-            "atsp0",
-            "at06 0 500000 0"
-        )
-
-        val adapter = ArrayAdapter(
-            this,
-            android.R.layout.simple_spinner_item,
-            presetLabels
-        )
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        commandPresetSpinner.adapter = adapter
-
-        commandPresetSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(
-                parent: AdapterView<*>?,
-                view: android.view.View?,
-                position: Int,
-                id: Long
-            ) {
-                manualCommandInput.setText(presetCommands[position])
-            }
-
-            override fun onNothingSelected(parent: AdapterView<*>?) {
-            }
-        }
-
-        commandPresetSpinner.setSelection(0)
-        manualCommandInput.setText("ata")
     }
 
     private fun registerUsbReceiver() {
