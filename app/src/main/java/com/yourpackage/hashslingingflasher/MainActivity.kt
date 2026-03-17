@@ -162,7 +162,7 @@ class MainActivity : AppCompatActivity() {
 
                         summaryOpenPortCommandText.text = "OpenPort Command: None"
                         summaryBusModeText.text = "Bus Mode: None"
-                        summaryEcuQueryText.text = "ECU Query: None"
+                        summaryEcuQueryText.text = "Interrogation Path: None"
                         summaryResponseTypeText.text = "Response Type: None"
                         summaryErrorText.text = "Last Error: Device disconnected"
                     }
@@ -325,7 +325,7 @@ class MainActivity : AppCompatActivity() {
 
             summaryOpenPortCommandText.text = "OpenPort Command: None"
             summaryBusModeText.text = "Bus Mode: None"
-            summaryEcuQueryText.text = "ECU Query: None"
+            summaryEcuQueryText.text = "Interrogation Path: None"
             summaryResponseTypeText.text = "Response Type: None"
             summaryErrorText.text = "Last Error: Device not detected"
 
@@ -360,7 +360,7 @@ class MainActivity : AppCompatActivity() {
 
         summaryOpenPortCommandText.text = "OpenPort Command: None"
         summaryBusModeText.text = "Bus Mode: None"
-        summaryEcuQueryText.text = "ECU Query: None"
+        summaryEcuQueryText.text = "Interrogation Path: None"
         summaryResponseTypeText.text = "Response Type: None"
         summaryErrorText.text = "Last Error: None"
     }
@@ -422,19 +422,19 @@ class MainActivity : AppCompatActivity() {
         summaryOpenPortCommandText.text = "OpenPort Command: $command"
         summaryBusModeText.text = buildBusModeSummary(command)
         summaryEcuQueryText.text = if (isRawEcuInterrogation) {
-            "ECU Query: Mode 01 PID 00"
+            "Interrogation Path: Raw transmit test"
         } else {
-            "ECU Query: None"
+            "Interrogation Path: OpenPort ASCII"
         }
 
         statusMessageText.text = if (isRawEcuInterrogation) {
-            "Sending ECU query..."
+            "Sending raw transmit test..."
         } else {
             "Sending command..."
         }
 
         manualCommandResponseText.text = if (isRawEcuInterrogation) {
-            "Waiting for ECU response..."
+            "Waiting for raw transmit result..."
         } else {
             "Waiting for OpenPort response..."
         }
@@ -466,8 +466,8 @@ class MainActivity : AppCompatActivity() {
 
                 statusMessageText.text = when {
                     isRawEcuInterrogation && result.success &&
-                        result.statusMessage.contains("ECU", ignoreCase = true) ->
-                        "ECU response received"
+                        result.statusMessage.contains("raw transmit", ignoreCase = true) ->
+                        "Raw transmit completed"
 
                     result.success ->
                         "OpenPort command response received"
@@ -478,8 +478,8 @@ class MainActivity : AppCompatActivity() {
 
                 summaryResponseTypeText.text = when {
                     isRawEcuInterrogation && result.success &&
-                        result.statusMessage.contains("ECU", ignoreCase = true) ->
-                        "Response Type: ECU response"
+                        result.statusMessage.contains("raw transmit", ignoreCase = true) ->
+                        "Response Type: Raw transmit only"
 
                     result.responseAscii.isNotEmpty() || result.responseHex.isNotEmpty() ->
                         "Response Type: OpenPort response"

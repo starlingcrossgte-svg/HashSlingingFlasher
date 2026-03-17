@@ -57,7 +57,7 @@ class UsbDeviceManager(private val context: Context) {
             if (!ataResult.responseAscii.contains("aro", ignoreCase = true)) {
                 return TactrixTestResult(
                     false,
-                    "OpenPort ATA failed before ECU query",
+                    "OpenPort ATA failed before raw transmit test",
                     ataResult.bytesSent,
                     ataResult.bytesReceived,
                     ataResult.responseHex,
@@ -76,7 +76,7 @@ class UsbDeviceManager(private val context: Context) {
             if (!atoResult.responseAscii.contains("aro", ignoreCase = true)) {
                 return TactrixTestResult(
                     false,
-                    "OpenPort CAN bus open failed before ECU query",
+                    "OpenPort CAN bus open failed before raw transmit test",
                     atoResult.bytesSent,
                     atoResult.bytesReceived,
                     atoResult.responseHex,
@@ -84,30 +84,25 @@ class UsbDeviceManager(private val context: Context) {
                 )
             }
 
-            val ecuResult = sendSubaruSsmQuery(
+            val rawResult = sendSubaruSsmQuery(
                 connection = session.connection,
                 endpointOut = session.endpointOut,
                 endpointIn = session.endpointIn
             )
 
-            val gotSubaruReply = containsSequence(
-                ecuResult.responseBytes,
-                byteArrayOf(0x00, 0x00, 0x07, 0xE8.toByte())
-            )
+            val rawTransmitSent = rawResult.bytesSent > 0
 
             return TactrixTestResult(
-                success = gotSubaruReply,
-                statusMessage = if (gotSubaruReply) {
-                    "ECU response received"
-                } else if (ecuResult.bytesReceived > 0) {
-                    "Unexpected adapter response during ECU query"
+                success = rawTransmitSent,
+                statusMessage = if (rawTransmitSent) {
+                    "Raw transmit completed"
                 } else {
-                    "No response from ECU"
+                    "Raw transmit failed"
                 },
-                bytesSent = ecuResult.bytesSent,
-                bytesReceived = ecuResult.bytesReceived,
-                responseHex = ecuResult.responseHex,
-                responseAscii = ecuResult.responseAscii
+                bytesSent = rawResult.bytesSent,
+                bytesReceived = rawResult.bytesReceived,
+                responseHex = rawResult.responseHex,
+                responseAscii = rawResult.responseAscii
             )
         } finally {
             closeConnectionSafely(session.connection, session.usbInterface)
@@ -328,8 +323,8 @@ class UsbDeviceManager(private val context: Context) {
             endpointIn = endpointIn,
             packetLabel = "Packet",
             packet = canFrame,
-            noDataMessage = "No ECU data returned",
-            timeoutMessage = "Read timed out or ECU did not respond"
+            noDataMessage = "No raw response returned",
+            timeoutMessage = "Read timed out after raw transmit"
         )
     }
 
@@ -459,22 +454,5 @@ class UsbDeviceManager(private val context: Context) {
 
     private fun toHex(bytes: ByteArray): String {
         return bytes.joinToString(" ") { "%02X".format(it) }
-    }
-
-    private fun containsSequence(data: ByteArray, target: ByteArray): Boolean {
-        if (target.isEmpty() || data.size < target.size) return false
-
-        for (i in 0..data.size - target.size) {
-            var match = true
-            for (j in target.indices) {
-                if (data[i + j] != target[j]) {
-                    match = false
-                    break
-                }
-            }
-            if (match) return true
-        }
-
-        return false
     }
 }
