@@ -84,7 +84,6 @@ class MainActivity : AppCompatActivity() {
                         deviceStateText.text = "Device: Tactrix OpenPort detected"
                         permissionStateText.text = "Permission: Granted"
                         statusMessageText.text = "OpenPort ready"
-
                         resetCommandDisplayToNeutral()
 
                         EcuLogger.usb("USB permission granted in receiver")
@@ -345,7 +344,7 @@ class MainActivity : AppCompatActivity() {
         } else {
             permissionStateText.text = "Permission: Pending"
             statusMessageText.text = "Requesting USB permission..."
-            EcuLogger.usb("Requested USB permission for Tactrix")
+            EcuLogger.usb("Requesting USB permission for Tactrix")
             requestUsbPermission(tactrixDevice)
         }
 
@@ -375,7 +374,9 @@ class MainActivity : AppCompatActivity() {
 
         EcuLogger.usb("requestUsbPermission called")
         EcuLogger.usb("requestUsbPermission flags: $flags")
-        EcuLogger.usb("requestUsbPermission device vendor=${device.vendorId} product=${device.productId}")
+        EcuLogger.usb(
+            "requestUsbPermission device vendor=${device.vendorId} product=${device.productId}"
+        )
 
         val permissionIntent = Intent(ACTION_USB_PERMISSION).apply {
             setPackage(packageName)
@@ -414,13 +415,30 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
+        val normalizedCommand = command.trim().lowercase()
+        val isRawEcuInterrogation = normalizedCommand == "0100"
+
         lastCommandText.text = "Last Command: $command"
         summaryOpenPortCommandText.text = "OpenPort Command: $command"
         summaryBusModeText.text = buildBusModeSummary(command)
-        summaryEcuQueryText.text = "ECU Query: None"
+        summaryEcuQueryText.text = if (isRawEcuInterrogation) {
+            "ECU Query: Mode 01 PID 00"
+        } else {
+            "ECU Query: None"
+        }
 
-        statusMessageText.text = "Sending command..."
-        manualCommandResponseText.text = "Waiting for OpenPort response..."
+        statusMessageText.text = if (isRawEcuInterrogation) {
+            "Sending ECU query..."
+        } else {
+            "Sending command..."
+        }
+
+        manualCommandResponseText.text = if (isRawEcuInterrogation) {
+            "Waiting for ECU response..."
+        } else {
+            "Waiting for OpenPort response..."
+        }
+
         responseHexText.text = "No response yet"
         bytesSentText.text = "Bytes Sent: -"
         bytesReceivedText.text = "Bytes Received: -"
@@ -428,7 +446,11 @@ class MainActivity : AppCompatActivity() {
         summaryErrorText.text = "Last Error: None"
 
         thread {
-            val result = UsbDeviceManager(this).sendCustomAsciiCommand(command)
+            val result = if (isRawEcuInterrogation) {
+                UsbDeviceManager(this).openTactrixChannel()
+            } else {
+                UsbDeviceManager(this).sendCustomAsciiCommand(command)
+            }
 
             runOnUiThread {
                 bytesSentText.text = "Bytes Sent: ${result.bytesSent}"
@@ -443,13 +465,25 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 statusMessageText.text = when {
-                    result.success -> "OpenPort command response received"
-                    else -> result.statusMessage
+                    isRawEcuInterrogation && result.success &&
+                        result.statusMessage.contains("ECU", ignoreCase = true) ->
+                        "ECU response received"
+
+                    result.success ->
+                        "OpenPort command response received"
+
+                    else ->
+                        result.statusMessage
                 }
 
                 summaryResponseTypeText.text = when {
+                    isRawEcuInterrogation && result.success &&
+                        result.statusMessage.contains("ECU", ignoreCase = true) ->
+                        "Response Type: ECU response"
+
                     result.responseAscii.isNotEmpty() || result.responseHex.isNotEmpty() ->
                         "Response Type: OpenPort response"
+
                     else ->
                         "Response Type: None"
                 }
@@ -472,6 +506,7 @@ class MainActivity : AppCompatActivity() {
             normalized == "ata" -> "Bus Mode: None"
             normalized.startsWith("ato6") && normalized.contains("500000") -> "Bus Mode: CAN 500000"
             normalized.startsWith("atsp") -> "Bus Mode: CAN"
+            normalized == "0100" -> "Bus Mode: CAN 500000"
             else -> "Bus Mode: Manual OpenPort"
         }
     }
