@@ -29,6 +29,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var manualCommandPresenter: ManualCommandPresenter
     private lateinit var commandPresetHelper: CommandPresetHelper
     private lateinit var openPortStatusRefresher: OpenPortStatusRefresher
+    private lateinit var openPortUsbEventHandler: OpenPortUsbEventHandler
 
     private lateinit var appTitleText: TextView
     private lateinit var statusMessageText: TextView
@@ -59,108 +60,7 @@ class MainActivity : AppCompatActivity() {
     private val usbReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             if (intent == null) return
-
-            val action = intent.action ?: ""
-            EcuLogger.usb("usbReceiver fired")
-            EcuLogger.usb("usbReceiver action: $action")
-
-            when (action) {
-                ACTION_USB_PERMISSION -> {
-                    val device = usbPermissionHelper.getUsbDeviceFromIntent(intent)
-                    val granted = intent.getBooleanExtra(
-                        UsbManager.EXTRA_PERMISSION_GRANTED,
-                        false
-                    )
-
-                    EcuLogger.usb("usbReceiver permission grant=$granted")
-                    if (device != null) {
-                        EcuLogger.usb(
-                            "usbReceiver device: vendor=${device.vendorId} product=${device.productId}"
-                        )
-                    } else {
-                        EcuLogger.usb("usbReceiver device: null")
-                    }
-
-                    currentDevice = device
-
-                    if (granted && device != null && usbPermissionHelper.isTactrixDevice(device)) {
-                        openPortStatusPresenter.showDeviceDetectedPermissionGranted()
-                        openPortStatusPresenter.resetCommandDisplayToNeutral()
-
-                        EcuLogger.usb("USB permission granted in receiver")
-                        openPortStatusPresenter.refreshDeveloperLog()
-
-                        Toast.makeText(
-                            this@MainActivity,
-                            "USB permission granted",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    } else {
-                        permissionStateText.text = "Permission: Denied"
-                        statusMessageText.text = "USB permission denied"
-                        summaryErrorText.text = "Last Error: USB permission denied"
-
-                        EcuLogger.error("USB permission denied in receiver")
-                        openPortStatusPresenter.refreshDeveloperLog()
-
-                        Toast.makeText(
-                            this@MainActivity,
-                            "USB permission denied",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                }
-
-                UsbManager.ACTION_USB_DEVICE_ATTACHED -> {
-                    val device = usbPermissionHelper.getUsbDeviceFromIntent(intent)
-                    if (device != null) {
-                        EcuLogger.usb(
-                            "USB device attached: vendor=${device.vendorId} product=${device.productId}"
-                        )
-                    } else {
-                        EcuLogger.usb("USB device attached: device null")
-                    }
-
-                    if (device != null && usbPermissionHelper.isTactrixDevice(device)) {
-                        currentDevice = device
-
-                        if (usbManager.hasPermission(device)) {
-                            openPortStatusPresenter.showDeviceDetectedPermissionGranted()
-                            openPortStatusPresenter.resetCommandDisplayToNeutral()
-                            EcuLogger.usb("Attached Tactrix already has permission")
-                        } else {
-                            openPortStatusPresenter.showDeviceDetectedPermissionPending()
-                            EcuLogger.usb("Requesting USB permission after attach event")
-                            usbPermissionHelper.requestUsbPermission(device, ACTION_USB_PERMISSION)
-                        }
-                    }
-
-                    openPortStatusPresenter.refreshDeveloperLog()
-                }
-
-                UsbManager.ACTION_USB_DEVICE_DETACHED -> {
-                    val device = usbPermissionHelper.getUsbDeviceFromIntent(intent)
-                    if (device != null) {
-                        EcuLogger.usb(
-                            "USB device detached: vendor=${device.vendorId} product=${device.productId}"
-                        )
-                    } else {
-                        EcuLogger.usb("USB device detached: device null")
-                    }
-
-                    if (device == null || usbPermissionHelper.isTactrixDevice(device)) {
-                        currentDevice = null
-                        openPortStatusPresenter.showDeviceDisconnected()
-                    }
-
-                    openPortStatusPresenter.refreshDeveloperLog()
-                }
-
-                else -> {
-                    EcuLogger.usb("usbReceiver ignored unexpected action")
-                    openPortStatusPresenter.refreshDeveloperLog()
-                }
-            }
+            openPortUsbEventHandler.handle(intent)
         }
     }
 
@@ -216,6 +116,20 @@ class MainActivity : AppCompatActivity() {
             requestUsbPermission = { device ->
                 usbPermissionHelper.requestUsbPermission(device, ACTION_USB_PERMISSION)
             },
+            onCurrentDeviceChanged = { device ->
+                currentDevice = device
+            }
+        )
+
+        openPortUsbEventHandler = OpenPortUsbEventHandler(
+            activity = this,
+            usbManager = usbManager,
+            usbPermissionHelper = usbPermissionHelper,
+            openPortStatusPresenter = openPortStatusPresenter,
+            permissionStateText = permissionStateText,
+            statusMessageText = statusMessageText,
+            summaryErrorText = summaryErrorText,
+            actionUsbPermission = ACTION_USB_PERMISSION,
             onCurrentDeviceChanged = { device ->
                 currentDevice = device
             }
