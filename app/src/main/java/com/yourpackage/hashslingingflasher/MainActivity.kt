@@ -28,6 +28,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var openPortStatusPresenter: OpenPortStatusPresenter
     private lateinit var manualCommandPresenter: ManualCommandPresenter
     private lateinit var commandPresetHelper: CommandPresetHelper
+    private lateinit var openPortStatusRefresher: OpenPortStatusRefresher
 
     private lateinit var appTitleText: TextView
     private lateinit var statusMessageText: TextView
@@ -208,6 +209,18 @@ class MainActivity : AppCompatActivity() {
             manualCommandInput = manualCommandInput
         )
 
+        openPortStatusRefresher = OpenPortStatusRefresher(
+            usbManager = usbManager,
+            usbPermissionHelper = usbPermissionHelper,
+            openPortStatusPresenter = openPortStatusPresenter,
+            requestUsbPermission = { device ->
+                usbPermissionHelper.requestUsbPermission(device, ACTION_USB_PERMISSION)
+            },
+            onCurrentDeviceChanged = { device ->
+                currentDevice = device
+            }
+        )
+
         commandPresetHelper.bind()
         registerUsbReceiver()
 
@@ -292,30 +305,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun refreshOpenPortStatusOnly() {
-        val tactrixDevice = usbManager.deviceList.values.firstOrNull {
-            usbPermissionHelper.isTactrixDevice(it)
-        }
-
-        currentDevice = tactrixDevice
-
-        if (tactrixDevice == null) {
-            openPortStatusPresenter.showDeviceNotDetected()
-            EcuLogger.usb("Tactrix device not found")
-            openPortStatusPresenter.refreshDeveloperLog()
-            return
-        }
-
-        if (usbManager.hasPermission(tactrixDevice)) {
-            openPortStatusPresenter.showDeviceDetectedPermissionGranted()
-            openPortStatusPresenter.resetCommandDisplayToNeutral()
-            EcuLogger.usb("USB permission already granted")
-        } else {
-            openPortStatusPresenter.showDeviceDetectedPermissionPending()
-            EcuLogger.usb("Requesting USB permission for Tactrix")
-            usbPermissionHelper.requestUsbPermission(tactrixDevice, ACTION_USB_PERMISSION)
-        }
-
-        openPortStatusPresenter.refreshDeveloperLog()
+        openPortStatusRefresher.refresh()
     }
 
     private fun sendManualCommand(command: String) {
