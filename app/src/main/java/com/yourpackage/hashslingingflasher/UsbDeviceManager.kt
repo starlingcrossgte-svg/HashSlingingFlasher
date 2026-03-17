@@ -31,233 +31,170 @@ class UsbDeviceManager(private val context: Context) {
         context.getSystemService(Context.USB_SERVICE) as UsbManager
 
     fun openTactrixChannel(): TactrixTestResult {
-        val deviceList = usbManager.deviceList
-
-        for (device in deviceList.values) {
-            if (device.vendorId == TACTRIX_VENDOR_ID &&
-                device.productId == TACTRIX_PRODUCT_ID
-            ) {
-                EcuLogger.usb("Opening Tactrix connection")
-
-                val connection = usbManager.openDevice(device)
-                if (connection == null) {
-                    EcuLogger.error("Failed to open Tactrix USB device")
-                    return TactrixTestResult(
-                        false,
-                        "Failed to open Tactrix USB device",
-                        -1,
-                        -1,
-                        "",
-                        ""
-                    )
-                }
-
-                val usbInterface = findBulkCommunicationInterface(device)
-                if (usbInterface == null) {
-                    EcuLogger.error("No bulk communication interface found")
-                    closeConnectionSafely(connection, null)
-                    return TactrixTestResult(
-                        false,
-                        "No bulk communication interface found",
-                        -1,
-                        -1,
-                        "",
-                        ""
-                    )
-                }
-
-                if (!connection.claimInterface(usbInterface, true)) {
-                    EcuLogger.error("Failed to claim Tactrix interface")
-                    closeConnectionSafely(connection, usbInterface)
-                    return TactrixTestResult(
-                        false,
-                        "Failed to claim Tactrix interface",
-                        -1,
-                        -1,
-                        "",
-                        ""
-                    )
-                }
-
-                EcuLogger.usb("Tactrix interface claimed successfully")
-
-                val endpointOut = findBulkOutEndpoint(usbInterface)
-                val endpointIn = findBulkInEndpoint(usbInterface)
-
-                if (endpointOut == null || endpointIn == null) {
-                    EcuLogger.error("Bulk endpoints not found")
-                    closeConnectionSafely(connection, usbInterface)
-                    return TactrixTestResult(
-                        false,
-                        "Bulk endpoints not found",
-                        -1,
-                        -1,
-                        "",
-                        ""
-                    )
-                }
-
-                EcuLogger.usb("Bulk OUT endpoint address: ${endpointOut.address}")
-                EcuLogger.usb("Bulk IN endpoint address: ${endpointIn.address}")
-
-                val ataResult = sendAsciiCommand(
-                    connection = connection,
-                    endpointOut = endpointOut,
-                    endpointIn = endpointIn,
-                    commandLabel = "OpenPort ATA command",
-                    commandString = "ata\r\n"
-                )
-
-                if (!ataResult.responseAscii.contains("aro", ignoreCase = true)) {
-                    closeConnectionSafely(connection, usbInterface)
-                    return TactrixTestResult(
-                        false,
-                        "OpenPort ATA failed before ECU query",
-                        ataResult.bytesSent,
-                        ataResult.bytesReceived,
-                        ataResult.responseHex,
-                        ataResult.responseAscii
-                    )
-                }
-
-                val atoResult = sendAsciiCommand(
-                    connection = connection,
-                    endpointOut = endpointOut,
-                    endpointIn = endpointIn,
-                    commandLabel = "OpenPort ATO CAN command",
-                    commandString = "ato6 0 500000 0\r\n"
-                )
-
-                if (!atoResult.responseAscii.contains("aro", ignoreCase = true)) {
-                    closeConnectionSafely(connection, usbInterface)
-                    return TactrixTestResult(
-                        false,
-                        "OpenPort CAN bus open failed before ECU query",
-                        atoResult.bytesSent,
-                        atoResult.bytesReceived,
-                        atoResult.responseHex,
-                        atoResult.responseAscii
-                    )
-                }
-
-                val ecuResult = sendSubaruSsmQuery(
-                    connection = connection,
-                    endpointOut = endpointOut,
-                    endpointIn = endpointIn
-                )
-
-                closeConnectionSafely(connection, usbInterface)
-
-                val gotSubaruReply = containsSequence(
-                    ecuResult.responseBytes,
-                    byteArrayOf(0x00, 0x00, 0x07, 0xE8.toByte())
-                )
-
-                return TactrixTestResult(
-                    success = gotSubaruReply,
-                    statusMessage = if (gotSubaruReply) {
-                        "ECU response received"
-                    } else if (ecuResult.bytesReceived > 0) {
-                        "Unexpected adapter response during ECU query"
-                    } else {
-                        "No response from ECU"
-                    },
-                    bytesSent = ecuResult.bytesSent,
-                    bytesReceived = ecuResult.bytesReceived,
-                    responseHex = ecuResult.responseHex,
-                    responseAscii = ecuResult.responseAscii
-                )
-            }
+        val sessionResult = openSession("Opening Tactrix connection")
+        if (sessionResult.error != null) {
+            return sessionResult.error
         }
 
-        EcuLogger.usb("Tactrix device not found")
-        return TactrixTestResult(false, "Tactrix device not detected", -1, -1, "", "")
+        val session = sessionResult.session ?: return TactrixTestResult(
+            false,
+            "Failed to open Tactrix session",
+            -1,
+            -1,
+            "",
+            ""
+        )
+
+        try {
+            val ataResult = sendAsciiCommand(
+                connection = session.connection,
+                endpointOut = session.endpointOut,
+                endpointIn = session.endpointIn,
+                commandLabel = "OpenPort ATA command",
+                commandString = "ata\r\n"
+            )
+
+            if (!ataResult.responseAscii.contains("aro", ignoreCase = true)) {
+                return TactrixTestResult(
+                    false,
+                    "OpenPort ATA failed before ECU query",
+                    ataResult.bytesSent,
+                    ataResult.bytesReceived,
+                    ataResult.responseHex,
+                    ataResult.responseAscii
+                )
+            }
+
+            val atoResult = sendAsciiCommand(
+                connection = session.connection,
+                endpointOut = session.endpointOut,
+                endpointIn = session.endpointIn,
+                commandLabel = "OpenPort ATO CAN command",
+                commandString = "ato6 0 500000 0\r\n"
+            )
+
+            if (!atoResult.responseAscii.contains("aro", ignoreCase = true)) {
+                return TactrixTestResult(
+                    false,
+                    "OpenPort CAN bus open failed before ECU query",
+                    atoResult.bytesSent,
+                    atoResult.bytesReceived,
+                    atoResult.responseHex,
+                    atoResult.responseAscii
+                )
+            }
+
+            val ecuResult = sendSubaruSsmQuery(
+                connection = session.connection,
+                endpointOut = session.endpointOut,
+                endpointIn = session.endpointIn
+            )
+
+            val gotSubaruReply = containsSequence(
+                ecuResult.responseBytes,
+                byteArrayOf(0x00, 0x00, 0x07, 0xE8.toByte())
+            )
+
+            return TactrixTestResult(
+                success = gotSubaruReply,
+                statusMessage = if (gotSubaruReply) {
+                    "ECU response received"
+                } else if (ecuResult.bytesReceived > 0) {
+                    "Unexpected adapter response during ECU query"
+                } else {
+                    "No response from ECU"
+                },
+                bytesSent = ecuResult.bytesSent,
+                bytesReceived = ecuResult.bytesReceived,
+                responseHex = ecuResult.responseHex,
+                responseAscii = ecuResult.responseAscii
+            )
+        } finally {
+            closeConnectionSafely(session.connection, session.usbInterface)
+        }
     }
 
     fun sendCustomAsciiCommand(command: String): TactrixTestResult {
-        val device = usbManager.deviceList.values.firstOrNull {
-            it.vendorId == TACTRIX_VENDOR_ID && it.productId == TACTRIX_PRODUCT_ID
-        } ?: return TactrixTestResult(false, "Tactrix device not detected", -1, -1, "", "")
-
-        EcuLogger.usb("Opening Tactrix connection for manual command")
-
-        val connection = usbManager.openDevice(device)
-            ?: return TactrixTestResult(false, "Failed to open Tactrix USB device", -1, -1, "", "")
-
-        val usbInterface = findBulkCommunicationInterface(device)
-        if (usbInterface == null) {
-            closeConnectionSafely(connection, null)
-            return TactrixTestResult(false, "No bulk communication interface found", -1, -1, "", "")
+        val sessionResult = openSession("Opening Tactrix connection for manual command")
+        if (sessionResult.error != null) {
+            return sessionResult.error
         }
 
-        if (!connection.claimInterface(usbInterface, true)) {
-            closeConnectionSafely(connection, usbInterface)
-            return TactrixTestResult(false, "Failed to claim Tactrix interface", -1, -1, "", "")
-        }
-
-        val endpointOut = findBulkOutEndpoint(usbInterface)
-        val endpointIn = findBulkInEndpoint(usbInterface)
-
-        if (endpointOut == null || endpointIn == null) {
-            closeConnectionSafely(connection, usbInterface)
-            return TactrixTestResult(false, "Bulk endpoints not found", -1, -1, "", "")
-        }
-
-        EcuLogger.usb("Bulk OUT endpoint address: ${endpointOut.address}")
-        EcuLogger.usb("Bulk IN endpoint address: ${endpointIn.address}")
-
-        val wakeResult = sendAsciiCommand(
-            connection = connection,
-            endpointOut = endpointOut,
-            endpointIn = endpointIn,
-            commandLabel = "Manual command ATA wake",
-            commandString = "ata\r\n"
+        val session = sessionResult.session ?: return TactrixTestResult(
+            false,
+            "Failed to open Tactrix session",
+            -1,
+            -1,
+            "",
+            ""
         )
 
-        if (!wakeResult.responseAscii.contains("aro", ignoreCase = true)) {
-            closeConnectionSafely(connection, usbInterface)
-            return TactrixTestResult(
-                false,
-                "OpenPort did not respond to ATA wake",
-                wakeResult.bytesSent,
-                wakeResult.bytesReceived,
-                wakeResult.responseHex,
-                wakeResult.responseAscii
+        try {
+            val wakeResult = sendAsciiCommand(
+                connection = session.connection,
+                endpointOut = session.endpointOut,
+                endpointIn = session.endpointIn,
+                commandLabel = "Manual command ATA wake",
+                commandString = "ata\r\n"
             )
-        }
 
-        val normalizedCommand = if (command.endsWith("\r\n")) {
-            command
-        } else {
-            "$command\r\n"
-        }
+            if (!wakeResult.responseAscii.contains("aro", ignoreCase = true)) {
+                return TactrixTestResult(
+                    false,
+                    "OpenPort did not respond to ATA wake",
+                    wakeResult.bytesSent,
+                    wakeResult.bytesReceived,
+                    wakeResult.responseHex,
+                    wakeResult.responseAscii
+                )
+            }
 
-        val result = sendAsciiCommand(
-            connection = connection,
-            endpointOut = endpointOut,
-            endpointIn = endpointIn,
-            commandLabel = "Manual OpenPort command",
-            commandString = normalizedCommand
-        )
-
-        closeConnectionSafely(connection, usbInterface)
-
-        val gotResponse = result.bytesReceived > 0 &&
-            (result.responseAscii.isNotEmpty() || result.responseHex.isNotEmpty())
-
-        return TactrixTestResult(
-            success = gotResponse,
-            statusMessage = if (gotResponse) {
-                "OpenPort response received"
+            val normalizedCommand = if (command.endsWith("\r\n")) {
+                command
             } else {
-                "No response from OpenPort"
-            },
-            bytesSent = result.bytesSent,
-            bytesReceived = result.bytesReceived,
-            responseHex = result.responseHex,
-            responseAscii = result.responseAscii
-        )
+                "$command\r\n"
+            }
+
+            val result = sendAsciiCommand(
+                connection = session.connection,
+                endpointOut = session.endpointOut,
+                endpointIn = session.endpointIn,
+                commandLabel = "Manual OpenPort command",
+                commandString = normalizedCommand
+            )
+
+            val gotResponse = result.bytesReceived > 0 &&
+                (result.responseAscii.isNotEmpty() || result.responseHex.isNotEmpty())
+
+            return TactrixTestResult(
+                success = gotResponse,
+                statusMessage = if (gotResponse) {
+                    "OpenPort response received"
+                } else {
+                    "No response from OpenPort"
+                },
+                bytesSent = result.bytesSent,
+                bytesReceived = result.bytesReceived,
+                responseHex = result.responseHex,
+                responseAscii = result.responseAscii
+            )
+        } finally {
+            closeConnectionSafely(session.connection, session.usbInterface)
+        }
     }
+
+    private data class OpenPortSession(
+        val device: UsbDevice,
+        val connection: UsbDeviceConnection,
+        val usbInterface: UsbInterface,
+        val endpointOut: UsbEndpoint,
+        val endpointIn: UsbEndpoint
+    )
+
+    private data class SessionOpenResult(
+        val session: OpenPortSession? = null,
+        val error: TactrixTestResult? = null
+    )
 
     private data class CommandResult(
         val bytesSent: Int,
@@ -266,6 +203,72 @@ class UsbDeviceManager(private val context: Context) {
         val responseAscii: String,
         val responseBytes: ByteArray
     )
+
+    private fun openSession(openLogMessage: String): SessionOpenResult {
+        val device = usbManager.deviceList.values.firstOrNull {
+            it.vendorId == TACTRIX_VENDOR_ID && it.productId == TACTRIX_PRODUCT_ID
+        }
+
+        if (device == null) {
+            EcuLogger.usb("Tactrix device not found")
+            return SessionOpenResult(
+                error = TactrixTestResult(false, "Tactrix device not detected", -1, -1, "", "")
+            )
+        }
+
+        EcuLogger.usb(openLogMessage)
+
+        val connection = usbManager.openDevice(device)
+        if (connection == null) {
+            EcuLogger.error("Failed to open Tactrix USB device")
+            return SessionOpenResult(
+                error = TactrixTestResult(false, "Failed to open Tactrix USB device", -1, -1, "", "")
+            )
+        }
+
+        val usbInterface = findBulkCommunicationInterface(device)
+        if (usbInterface == null) {
+            EcuLogger.error("No bulk communication interface found")
+            closeConnectionSafely(connection, null)
+            return SessionOpenResult(
+                error = TactrixTestResult(false, "No bulk communication interface found", -1, -1, "", "")
+            )
+        }
+
+        if (!connection.claimInterface(usbInterface, true)) {
+            EcuLogger.error("Failed to claim Tactrix interface")
+            closeConnectionSafely(connection, usbInterface)
+            return SessionOpenResult(
+                error = TactrixTestResult(false, "Failed to claim Tactrix interface", -1, -1, "", "")
+            )
+        }
+
+        EcuLogger.usb("Tactrix interface claimed successfully")
+
+        val endpointOut = findBulkOutEndpoint(usbInterface)
+        val endpointIn = findBulkInEndpoint(usbInterface)
+
+        if (endpointOut == null || endpointIn == null) {
+            EcuLogger.error("Bulk endpoints not found")
+            closeConnectionSafely(connection, usbInterface)
+            return SessionOpenResult(
+                error = TactrixTestResult(false, "Bulk endpoints not found", -1, -1, "", "")
+            )
+        }
+
+        EcuLogger.usb("Bulk OUT endpoint address: ${endpointOut.address}")
+        EcuLogger.usb("Bulk IN endpoint address: ${endpointIn.address}")
+
+        return SessionOpenResult(
+            session = OpenPortSession(
+                device = device,
+                connection = connection,
+                usbInterface = usbInterface,
+                endpointOut = endpointOut,
+                endpointIn = endpointIn
+            )
+        )
+    }
 
     private fun sendAsciiCommand(
         connection: UsbDeviceConnection,
@@ -280,8 +283,72 @@ class UsbDeviceManager(private val context: Context) {
         EcuLogger.usb(
             "Command text: ${commandString.replace("\r", "\\r").replace("\n", "\\n")}"
         )
-        EcuLogger.usb("Packet length: ${packet.size}")
-        EcuLogger.usb("Packet hex: ${toHex(packet)}")
+
+        return sendRawPacket(
+            connection = connection,
+            endpointOut = endpointOut,
+            endpointIn = endpointIn,
+            packetLabel = "Packet",
+            packet = packet,
+            noDataMessage = "No data returned",
+            timeoutMessage = "Read timed out or no response from device"
+        )
+    }
+
+    private fun sendSubaruSsmQuery(
+        connection: UsbDeviceConnection,
+        endpointOut: UsbEndpoint,
+        endpointIn: UsbEndpoint
+    ): CommandResult {
+        val canFrame = byteArrayOf(
+            0x00,
+            0x00,
+            0x07,
+            0xE0.toByte(),
+            0xA8.toByte(),
+            0x00,
+            0x00,
+            0x00,
+            0x08
+        )
+
+        val headerResult = sendAsciiCommand(
+            connection = connection,
+            endpointOut = endpointOut,
+            endpointIn = endpointIn,
+            commandLabel = "Subaru SSM query header command",
+            commandString = "atg ${canFrame.size}\r\n"
+        )
+
+        if (headerResult.bytesReceived < 0) {
+            return headerResult
+        }
+
+        EcuLogger.usb("Sending Subaru SSM raw CAN frame")
+        EcuLogger.usb("CAN frame hex: ${toHex(canFrame)}")
+
+        return sendRawPacket(
+            connection = connection,
+            endpointOut = endpointOut,
+            endpointIn = endpointIn,
+            packetLabel = "Packet",
+            packet = canFrame,
+            noDataMessage = "No ECU data returned",
+            timeoutMessage = "Read timed out or ECU did not respond"
+        )
+    }
+
+    private fun sendRawPacket(
+        connection: UsbDeviceConnection,
+        endpointOut: UsbEndpoint,
+        endpointIn: UsbEndpoint,
+        packetLabel: String,
+        packet: ByteArray,
+        noDataMessage: String,
+        timeoutMessage: String
+    ): CommandResult {
+        EcuLogger.usb("$packetLabel length: ${packet.size}")
+        EcuLogger.usb("$packetLabel hex: ${toHex(packet)}")
         EcuLogger.usb("Write timeout ms: $WRITE_TIMEOUT_MS")
         EcuLogger.usb("Read timeout ms: $READ_TIMEOUT_MS")
 
@@ -326,9 +393,9 @@ class UsbDeviceManager(private val context: Context) {
             EcuLogger.usb("Response bytes: $responseHex")
             EcuLogger.usb("Response ascii: $responseAscii")
         } else if (received == 0) {
-            EcuLogger.usb("No data returned")
+            EcuLogger.usb(noDataMessage)
         } else {
-            EcuLogger.usb("Read timed out or no response from device")
+            EcuLogger.usb(timeoutMessage)
         }
 
         return CommandResult(
@@ -337,6 +404,381 @@ class UsbDeviceManager(private val context: Context) {
             responseHex = responseHex,
             responseAscii = responseAscii,
             responseBytes = responseBytes
+        )
+    }
+
+    private fun closeConnectionSafely(
+        connection: UsbDeviceConnection,
+        usbInterface: UsbInterface?
+    ) {
+        try {
+            if (usbInterface != null) {
+                connection.releaseInterface(usbInterface)
+            }
+        } catch (_: Exception) {
+        }
+
+        try {
+            connection.close()
+        } catch (_: Exception) {
+        }
+
+        EcuLogger.usb("Tactrix connection closed cleanly")
+    }
+
+    private fun findBulkCommunicationInterface(device: UsbDevice): UsbInterface? {
+        for (i in 0 until device.interfaceCount) {
+            val usbInterface = device.getInterface(i)
+            val hasBulkIn = findBulkInEndpoint(usbInterface) != null
+            val hasBulkOut = findBulkOutEndpoint(usbInterface) != null
+            if (hasBulkIn && hasBulkOut) {
+                return usbInterface
+            }
+        }
+        return null
+    }
+
+    private fun findBulkInEndpoint(usbInterface: UsbInterface): UsbEndpoint? {
+        for (i in 0 until usbInterface.endpointCount) {
+            val endpoint = usbInterface.getEndpoint(i)
+            if (endpoint.type == UsbConstants.USB_ENDPOINT_XFER_BULK &&
+                endpoint.direction == UsbConstants.USB_DIR_IN
+            ) {
+                return endpoint
+            }
+        }
+        return null
+    }
+
+    private fun findBulkOutEndpoint(usbInterface: UsbInterface): UsbEndpoint? {
+        for (i in 0 until usbInterface.endpointCount) {
+            val endpoint = usbInterface.getEndpoint(i)
+            if (endpoint.type == UsbConstants.USB_ENDPOINT_XFER_BULK &&
+                endpoint.direction == UsbConstants.USB_DIR_OUT
+            ) {
+                return endpoint
+            }
+        }
+        return null
+    }
+
+    private fun toHex(bytes: ByteArray): String {
+        return bytes.joinToString(" ") { "%02X".format(it) }
+    }
+
+    private fun containsSequence(data: ByteArray, target: ByteArray): Boolean {
+        if (target.isEmpty() || data.size < target.size) return false
+
+        for (i in 0..data.size - target.size) {
+            var match = true
+            for (j in target.indices) {
+                if (data[i + j] != target[j]) {
+                    match = false
+                    break
+                }
+            }
+            if (match) return true
+        }
+
+        return false
+    }
+}
+EOFcat app/src/main/java/com/yourpackage/hashslingingflasher/UsbDeviceManager.kt
+cat > app/src/main/java/com/yourpackage/hashslingingflasher/UsbDeviceManager.kt <<'EOF'
+package com.hashslingingflasher
+
+import android.content.Context
+import android.hardware.usb.UsbConstants
+import android.hardware.usb.UsbDevice
+import android.hardware.usb.UsbDeviceConnection
+import android.hardware.usb.UsbEndpoint
+import android.hardware.usb.UsbInterface
+import android.hardware.usb.UsbManager
+import java.nio.charset.Charset
+
+data class TactrixTestResult(
+    val success: Boolean,
+    val statusMessage: String,
+    val bytesSent: Int,
+    val bytesReceived: Int,
+    val responseHex: String,
+    val responseAscii: String = ""
+)
+
+class UsbDeviceManager(private val context: Context) {
+
+    companion object {
+        private const val TACTRIX_VENDOR_ID = 1027
+        private const val TACTRIX_PRODUCT_ID = 52301
+        private const val READ_TIMEOUT_MS = 4000
+        private const val WRITE_TIMEOUT_MS = 3000
+    }
+
+    private val usbManager: UsbManager =
+        context.getSystemService(Context.USB_SERVICE) as UsbManager
+
+    fun openTactrixChannel(): TactrixTestResult {
+        val sessionResult = openSession("Opening Tactrix connection")
+        if (sessionResult.error != null) {
+            return sessionResult.error
+        }
+
+        val session = sessionResult.session ?: return TactrixTestResult(
+            false,
+            "Failed to open Tactrix session",
+            -1,
+            -1,
+            "",
+            ""
+        )
+
+        try {
+            val ataResult = sendAsciiCommand(
+                connection = session.connection,
+                endpointOut = session.endpointOut,
+                endpointIn = session.endpointIn,
+                commandLabel = "OpenPort ATA command",
+                commandString = "ata\r\n"
+            )
+
+            if (!ataResult.responseAscii.contains("aro", ignoreCase = true)) {
+                return TactrixTestResult(
+                    false,
+                    "OpenPort ATA failed before ECU query",
+                    ataResult.bytesSent,
+                    ataResult.bytesReceived,
+                    ataResult.responseHex,
+                    ataResult.responseAscii
+                )
+            }
+
+            val atoResult = sendAsciiCommand(
+                connection = session.connection,
+                endpointOut = session.endpointOut,
+                endpointIn = session.endpointIn,
+                commandLabel = "OpenPort ATO CAN command",
+                commandString = "ato6 0 500000 0\r\n"
+            )
+
+            if (!atoResult.responseAscii.contains("aro", ignoreCase = true)) {
+                return TactrixTestResult(
+                    false,
+                    "OpenPort CAN bus open failed before ECU query",
+                    atoResult.bytesSent,
+                    atoResult.bytesReceived,
+                    atoResult.responseHex,
+                    atoResult.responseAscii
+                )
+            }
+
+            val ecuResult = sendSubaruSsmQuery(
+                connection = session.connection,
+                endpointOut = session.endpointOut,
+                endpointIn = session.endpointIn
+            )
+
+            val gotSubaruReply = containsSequence(
+                ecuResult.responseBytes,
+                byteArrayOf(0x00, 0x00, 0x07, 0xE8.toByte())
+            )
+
+            return TactrixTestResult(
+                success = gotSubaruReply,
+                statusMessage = if (gotSubaruReply) {
+                    "ECU response received"
+                } else if (ecuResult.bytesReceived > 0) {
+                    "Unexpected adapter response during ECU query"
+                } else {
+                    "No response from ECU"
+                },
+                bytesSent = ecuResult.bytesSent,
+                bytesReceived = ecuResult.bytesReceived,
+                responseHex = ecuResult.responseHex,
+                responseAscii = ecuResult.responseAscii
+            )
+        } finally {
+            closeConnectionSafely(session.connection, session.usbInterface)
+        }
+    }
+
+    fun sendCustomAsciiCommand(command: String): TactrixTestResult {
+        val sessionResult = openSession("Opening Tactrix connection for manual command")
+        if (sessionResult.error != null) {
+            return sessionResult.error
+        }
+
+        val session = sessionResult.session ?: return TactrixTestResult(
+            false,
+            "Failed to open Tactrix session",
+            -1,
+            -1,
+            "",
+            ""
+        )
+
+        try {
+            val wakeResult = sendAsciiCommand(
+                connection = session.connection,
+                endpointOut = session.endpointOut,
+                endpointIn = session.endpointIn,
+                commandLabel = "Manual command ATA wake",
+                commandString = "ata\r\n"
+            )
+
+            if (!wakeResult.responseAscii.contains("aro", ignoreCase = true)) {
+                return TactrixTestResult(
+                    false,
+                    "OpenPort did not respond to ATA wake",
+                    wakeResult.bytesSent,
+                    wakeResult.bytesReceived,
+                    wakeResult.responseHex,
+                    wakeResult.responseAscii
+                )
+            }
+
+            val normalizedCommand = if (command.endsWith("\r\n")) {
+                command
+            } else {
+                "$command\r\n"
+            }
+
+            val result = sendAsciiCommand(
+                connection = session.connection,
+                endpointOut = session.endpointOut,
+                endpointIn = session.endpointIn,
+                commandLabel = "Manual OpenPort command",
+                commandString = normalizedCommand
+            )
+
+            val gotResponse = result.bytesReceived > 0 &&
+                (result.responseAscii.isNotEmpty() || result.responseHex.isNotEmpty())
+
+            return TactrixTestResult(
+                success = gotResponse,
+                statusMessage = if (gotResponse) {
+                    "OpenPort response received"
+                } else {
+                    "No response from OpenPort"
+                },
+                bytesSent = result.bytesSent,
+                bytesReceived = result.bytesReceived,
+                responseHex = result.responseHex,
+                responseAscii = result.responseAscii
+            )
+        } finally {
+            closeConnectionSafely(session.connection, session.usbInterface)
+        }
+    }
+
+    private data class OpenPortSession(
+        val device: UsbDevice,
+        val connection: UsbDeviceConnection,
+        val usbInterface: UsbInterface,
+        val endpointOut: UsbEndpoint,
+        val endpointIn: UsbEndpoint
+    )
+
+    private data class SessionOpenResult(
+        val session: OpenPortSession? = null,
+        val error: TactrixTestResult? = null
+    )
+
+    private data class CommandResult(
+        val bytesSent: Int,
+        val bytesReceived: Int,
+        val responseHex: String,
+        val responseAscii: String,
+        val responseBytes: ByteArray
+    )
+
+    private fun openSession(openLogMessage: String): SessionOpenResult {
+        val device = usbManager.deviceList.values.firstOrNull {
+            it.vendorId == TACTRIX_VENDOR_ID && it.productId == TACTRIX_PRODUCT_ID
+        }
+
+        if (device == null) {
+            EcuLogger.usb("Tactrix device not found")
+            return SessionOpenResult(
+                error = TactrixTestResult(false, "Tactrix device not detected", -1, -1, "", "")
+            )
+        }
+
+        EcuLogger.usb(openLogMessage)
+
+        val connection = usbManager.openDevice(device)
+        if (connection == null) {
+            EcuLogger.error("Failed to open Tactrix USB device")
+            return SessionOpenResult(
+                error = TactrixTestResult(false, "Failed to open Tactrix USB device", -1, -1, "", "")
+            )
+        }
+
+        val usbInterface = findBulkCommunicationInterface(device)
+        if (usbInterface == null) {
+            EcuLogger.error("No bulk communication interface found")
+            closeConnectionSafely(connection, null)
+            return SessionOpenResult(
+                error = TactrixTestResult(false, "No bulk communication interface found", -1, -1, "", "")
+            )
+        }
+
+        if (!connection.claimInterface(usbInterface, true)) {
+            EcuLogger.error("Failed to claim Tactrix interface")
+            closeConnectionSafely(connection, usbInterface)
+            return SessionOpenResult(
+                error = TactrixTestResult(false, "Failed to claim Tactrix interface", -1, -1, "", "")
+            )
+        }
+
+        EcuLogger.usb("Tactrix interface claimed successfully")
+
+        val endpointOut = findBulkOutEndpoint(usbInterface)
+        val endpointIn = findBulkInEndpoint(usbInterface)
+
+        if (endpointOut == null || endpointIn == null) {
+            EcuLogger.error("Bulk endpoints not found")
+            closeConnectionSafely(connection, usbInterface)
+            return SessionOpenResult(
+                error = TactrixTestResult(false, "Bulk endpoints not found", -1, -1, "", "")
+            )
+        }
+
+        EcuLogger.usb("Bulk OUT endpoint address: ${endpointOut.address}")
+        EcuLogger.usb("Bulk IN endpoint address: ${endpointIn.address}")
+
+        return SessionOpenResult(
+            session = OpenPortSession(
+                device = device,
+                connection = connection,
+                usbInterface = usbInterface,
+                endpointOut = endpointOut,
+                endpointIn = endpointIn
+            )
+        )
+    }
+
+    private fun sendAsciiCommand(
+        connection: UsbDeviceConnection,
+        endpointOut: UsbEndpoint,
+        endpointIn: UsbEndpoint,
+        commandLabel: String,
+        commandString: String
+    ): CommandResult {
+        val packet = commandString.toByteArray(Charset.forName("US-ASCII"))
+
+        EcuLogger.usb("Sending $commandLabel")
+        EcuLogger.usb(
+            "Command text: ${commandString.replace("\r", "\\r").replace("\n", "\\n")}"
+        )
+
+        return sendRawPacket(
+            connection = connection,
+            endpointOut = endpointOut,
+            endpointIn = endpointIn,
+            packetLabel = "Packet",
+            packet = packet,
+            noDataMessage = "No data returned",
+            timeoutMessage = "Read timed out or no response from device"
         )
     }
 
@@ -366,25 +808,41 @@ class UsbDeviceManager(private val context: Context) {
         )
 
         if (headerResult.bytesReceived < 0) {
-            return CommandResult(
-                bytesSent = headerResult.bytesSent,
-                bytesReceived = headerResult.bytesReceived,
-                responseHex = headerResult.responseHex,
-                responseAscii = headerResult.responseAscii,
-                responseBytes = headerResult.responseBytes
-            )
+            return headerResult
         }
 
         EcuLogger.usb("Sending Subaru SSM raw CAN frame")
         EcuLogger.usb("CAN frame hex: ${toHex(canFrame)}")
-        EcuLogger.usb("Packet length: ${canFrame.size}")
+
+        return sendRawPacket(
+            connection = connection,
+            endpointOut = endpointOut,
+            endpointIn = endpointIn,
+            packetLabel = "Packet",
+            packet = canFrame,
+            noDataMessage = "No ECU data returned",
+            timeoutMessage = "Read timed out or ECU did not respond"
+        )
+    }
+
+    private fun sendRawPacket(
+        connection: UsbDeviceConnection,
+        endpointOut: UsbEndpoint,
+        endpointIn: UsbEndpoint,
+        packetLabel: String,
+        packet: ByteArray,
+        noDataMessage: String,
+        timeoutMessage: String
+    ): CommandResult {
+        EcuLogger.usb("$packetLabel length: ${packet.size}")
+        EcuLogger.usb("$packetLabel hex: ${toHex(packet)}")
         EcuLogger.usb("Write timeout ms: $WRITE_TIMEOUT_MS")
         EcuLogger.usb("Read timeout ms: $READ_TIMEOUT_MS")
 
         val sent = connection.bulkTransfer(
             endpointOut,
-            canFrame,
-            canFrame.size,
+            packet,
+            packet.size,
             WRITE_TIMEOUT_MS
         )
 
@@ -422,9 +880,9 @@ class UsbDeviceManager(private val context: Context) {
             EcuLogger.usb("Response bytes: $responseHex")
             EcuLogger.usb("Response ascii: $responseAscii")
         } else if (received == 0) {
-            EcuLogger.usb("No ECU data returned")
+            EcuLogger.usb(noDataMessage)
         } else {
-            EcuLogger.usb("Read timed out or ECU did not respond")
+            EcuLogger.usb(timeoutMessage)
         }
 
         return CommandResult(
