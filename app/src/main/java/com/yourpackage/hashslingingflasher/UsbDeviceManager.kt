@@ -140,7 +140,7 @@ class UsbDeviceManager(private val context: Context) {
                     )
                 }
 
-                val ecuResult = sendObdRawQuery(
+                val ecuResult = sendSubaruSsmQuery(
                     connection = connection,
                     endpointOut = endpointOut,
                     endpointIn = endpointIn
@@ -148,17 +148,17 @@ class UsbDeviceManager(private val context: Context) {
 
                 closeConnectionSafely(connection, usbInterface)
 
-                val success = containsSequence(
+                val gotSubaruReply = containsSequence(
                     ecuResult.responseBytes,
-                    byteArrayOf(0x41, 0x00)
+                    byteArrayOf(0x00, 0x00, 0x07, 0xE8.toByte())
                 )
 
                 return TactrixTestResult(
-                    success = success || ecuResult.bytesReceived > 0,
-                    statusMessage = if (success) {
+                    success = gotSubaruReply,
+                    statusMessage = if (gotSubaruReply) {
                         "ECU response received"
                     } else if (ecuResult.bytesReceived > 0) {
-                        "OpenPort response received"
+                        "Unexpected adapter response during ECU query"
                     } else {
                         "No response from ECU"
                     },
@@ -340,7 +340,7 @@ class UsbDeviceManager(private val context: Context) {
         )
     }
 
-    private fun sendObdRawQuery(
+    private fun sendSubaruSsmQuery(
         connection: UsbDeviceConnection,
         endpointOut: UsbEndpoint,
         endpointIn: UsbEndpoint
@@ -349,21 +349,19 @@ class UsbDeviceManager(private val context: Context) {
             0x00,
             0x00,
             0x07,
-            0xDF.toByte(),
-            0x02,
-            0x01,
+            0xE0.toByte(),
+            0xA8.toByte(),
             0x00,
             0x00,
             0x00,
-            0x00,
-            0x00
+            0x08
         )
 
         val headerResult = sendAsciiCommand(
             connection = connection,
             endpointOut = endpointOut,
             endpointIn = endpointIn,
-            commandLabel = "ECU query header command",
+            commandLabel = "Subaru SSM query header command",
             commandString = "atg ${canFrame.size}\r\n"
         )
 
@@ -377,7 +375,7 @@ class UsbDeviceManager(private val context: Context) {
             )
         }
 
-        EcuLogger.usb("Sending ECU OBD raw CAN frame")
+        EcuLogger.usb("Sending Subaru SSM raw CAN frame")
         EcuLogger.usb("CAN frame hex: ${toHex(canFrame)}")
         EcuLogger.usb("Packet length: ${canFrame.size}")
         EcuLogger.usb("Write timeout ms: $WRITE_TIMEOUT_MS")
