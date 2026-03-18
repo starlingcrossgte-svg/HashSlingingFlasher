@@ -1,6 +1,9 @@
 package com.hashslingingflasher
 
 import android.content.Context
+import android.hardware.usb.UsbDeviceConnection
+import android.hardware.usb.UsbEndpoint
+import java.nio.charset.Charset
 
 data class TactrixTestResult(
     val success: Boolean,
@@ -61,7 +64,7 @@ class UsbDeviceManager(private val context: Context) {
                 )
             }
 
-            val atoResult = transport.sendAsciiCommand(
+            val at06Result = transport.sendAsciiCommand(
                 connection = session.connection,
                 endpointOut = session.endpointOut,
                 endpointIn = session.endpointIn,
@@ -69,14 +72,14 @@ class UsbDeviceManager(private val context: Context) {
                 commandString = "at06 0 500000 0\r\n"
             )
 
-            if (atoResult.responseAscii.contains("aro", ignoreCase = true)) {
+            if (at06Result.responseAscii.contains("aro", ignoreCase = true)) {
                 return TactrixTestResult(
                     false,
                     "OpenPort CAN bus open failed before raw transmit test",
-                    atoResult.bytesSent,
-                    atoResult.bytesReceived,
-                    atoResult.responseHex,
-                    atoResult.responseAscii
+                    at06Result.bytesSent,
+                    at06Result.bytesReceived,
+                    at06Result.responseHex,
+                    at06Result.responseAscii
                 )
             }
 
@@ -103,7 +106,10 @@ class UsbDeviceManager(private val context: Context) {
         }
     }
 
-    fun sendCustomAsciiCommand(command: String): TactrixTestResult {
+    fun sendCustomAsciiCommand(
+        command: String,
+        skipAutoAtaWake: Boolean = false
+    ): TactrixTestResult {
         val sessionResult = sessionManager.openSession("Opening Tactrix connection for manual command")
         if (sessionResult.error != null) {
             return sessionResult.error
@@ -126,7 +132,7 @@ class UsbDeviceManager(private val context: Context) {
             }
 
             val trimmedLowerCommand = command.trim().lowercase()
-            val shouldSendAtaWake = trimmedLowerCommand != "ata"
+            val shouldSendAtaWake = !skipAutoAtaWake && trimmedLowerCommand != "ata"
 
             if (shouldSendAtaWake) {
                 val wakeResult = transport.sendAsciiCommand(
@@ -147,6 +153,8 @@ class UsbDeviceManager(private val context: Context) {
                         wakeResult.responseAscii
                     )
                 }
+            } else if (skipAutoAtaWake) {
+                EcuLogger.usb("Skipping automatic ATA wake because skipAutoAtaWake=true")
             } else {
                 EcuLogger.usb("Skipping automatic ATA wake because command is ATA")
             }

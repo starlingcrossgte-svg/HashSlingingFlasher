@@ -25,6 +25,7 @@ class OpenPortInterrogator(private val context: Context) {
 
     fun profileCommand(command: String): OpenPortCommandProfile {
         val normalized = command.trim().lowercase()
+        val skipAutoAtaWake = shouldSkipAutoAtaWake(normalized)
 
         val busMode = when {
             normalized == "ata" -> "Bus Mode: None"
@@ -49,6 +50,8 @@ class OpenPortInterrogator(private val context: Context) {
         val sendSequence = when {
             normalized == "ata" ->
                 "Send Sequence: direct ATA only"
+            skipAutoAtaWake ->
+                "Send Sequence: direct command only (ATA wake bypassed)"
             normalized.startsWith("at") ->
                 "Send Sequence: auto ATA wake, then adapter command"
             else ->
@@ -69,7 +72,11 @@ class OpenPortInterrogator(private val context: Context) {
 
     fun runManualCommand(command: String): OpenPortInterrogationResult {
         val profile = profileCommand(command)
-        val transportResult = UsbDeviceManager(context).sendCustomAsciiCommand(command)
+        val skipAutoAtaWake = shouldSkipAutoAtaWake(profile.normalizedCommand)
+        val transportResult = UsbDeviceManager(context).sendCustomAsciiCommand(
+            command = command,
+            skipAutoAtaWake = skipAutoAtaWake
+        )
         val interpreted = responseInterpreter.interpret(transportResult)
 
         return OpenPortInterrogationResult(
@@ -79,5 +86,11 @@ class OpenPortInterrogator(private val context: Context) {
             statusSummary = interpreted.statusSummary,
             errorSummary = interpreted.errorSummary
         )
+    }
+
+    private fun shouldSkipAutoAtaWake(normalizedCommand: String): Boolean {
+        return normalizedCommand == "ata" ||
+            normalizedCommand.startsWith("ati") ||
+            normalizedCommand.startsWith("at06")
     }
 }
