@@ -16,6 +16,7 @@ class ManualCommandPresenter(
     private val summaryErrorText: TextView,
     private val manualCommandResponseText: TextView
 ) {
+
     fun showNoDeviceConnected() {
         statusMessageText.text = "OpenPort not detected"
         manualCommandResponseText.text = "No device connected"
@@ -31,7 +32,8 @@ class ManualCommandPresenter(
         lastCommandText.text = "Last Command: $command"
         summaryOpenPortCommandText.text = "OpenPort Command: ${profile.displayCommand}"
         summaryBusModeText.text = profile.busModeSummary
-        summaryEcuQueryText.text = profile.interrogationPath
+        summaryEcuQueryText.text =
+            "${profile.commandFamilySummary} | ${profile.sendSequenceSummary}"
 
         statusMessageText.text = "Sending command..."
         manualCommandResponseText.text = "Waiting for OpenPort response..."
@@ -67,7 +69,8 @@ class ManualCommandPresenter(
         summaryOpenPortCommandText.text =
             "OpenPort Command: ${result.profile.displayCommand}"
         summaryBusModeText.text = result.profile.busModeSummary
-        summaryEcuQueryText.text = result.profile.interrogationPath
+        summaryEcuQueryText.text =
+            "${result.profile.commandFamilySummary} | ${result.profile.sendSequenceSummary}"
         summaryResponseTypeText.text = result.responseTypeSummary
         summaryErrorText.text = result.errorSummary
     }
