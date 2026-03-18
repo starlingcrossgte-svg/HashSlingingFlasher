@@ -65,8 +65,8 @@ class UsbDeviceManager(private val context: Context) {
                 connection = session.connection,
                 endpointOut = session.endpointOut,
                 endpointIn = session.endpointIn,
-                commandLabel = "OpenPort ATD CAN command",
-                commandString = "atd0 0 500000 0\r\n"
+                commandLabel = "OpenPort AT06 CAN command",
+                commandString = "at06 0 500000 0\r\n"
             )
 
             if (atoResult.responseAscii.contains("aro", ignoreCase = true)) {
