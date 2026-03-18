@@ -19,12 +19,14 @@ data class OpenPortInterrogationResult(
 
 class OpenPortInterrogator(private val context: Context) {
 
+    private val responseInterpreter = OpenPortResponseInterpreter()
+
     fun profileCommand(command: String): OpenPortCommandProfile {
         val normalized = command.trim().lowercase()
 
         val busMode = when {
             normalized == "ata" -> "Bus Mode: None"
-            normalized.startsWith("ato6") && normalized.contains("500000") -> "Bus Mode: CAN 500000"
+            normalized.startsWith("at06") && normalized.contains("500000") -> "Bus Mode: CAN 500000"
             normalized.startsWith("atsp") -> "Bus Mode: CAN"
             else -> "Bus Mode: Manual OpenPort"
         }
@@ -40,30 +42,14 @@ class OpenPortInterrogator(private val context: Context) {
     fun runManualCommand(command: String): OpenPortInterrogationResult {
         val profile = profileCommand(command)
         val transportResult = UsbDeviceManager(context).sendCustomAsciiCommand(command)
-
-        val responseTypeSummary = when {
-            transportResult.responseAscii.isNotEmpty() || transportResult.responseHex.isNotEmpty() ->
-                "Response Type: OpenPort response"
-            else ->
-                "Response Type: None"
-        }
-
-        val statusSummary = when {
-            transportResult.success -> "OpenPort command response received"
-            else -> transportResult.statusMessage
-        }
-
-        val errorSummary = when {
-            transportResult.success -> "Last Error: None"
-            else -> "Last Error: ${transportResult.statusMessage}"
-        }
+        val interpreted = responseInterpreter.interpret(transportResult)
 
         return OpenPortInterrogationResult(
             profile = profile,
             transportResult = transportResult,
-            responseTypeSummary = responseTypeSummary,
-            statusSummary = statusSummary,
-            errorSummary = errorSummary
+            responseTypeSummary = interpreted.responseTypeSummary,
+            statusSummary = interpreted.statusSummary,
+            errorSummary = interpreted.errorSummary
         )
     }
 }
