@@ -9,6 +9,8 @@ data class OpenPortInterpretedResponse(
 class OpenPortResponseInterpreter {
 
     fun interpret(result: TactrixTestResult): OpenPortInterpretedResponse {
+        val adapterRejected = looksLikeAdapterRejection(result.responseAscii)
+
         val responseTypeSummary = when {
             result.responseAscii.isNotBlank() -> classifyAsciiResponse(result.responseAscii)
             result.responseHex.isNotBlank() -> "Response Type: Raw hex response"
@@ -16,20 +18,26 @@ class OpenPortResponseInterpreter {
         }
 
         val statusSummary = when {
+            adapterRejected -> "OpenPort adapter rejected command"
             result.success && result.responseAscii.isNotBlank() ->
                 "OpenPort adapter response received"
             result.success && result.responseHex.isNotBlank() ->
                 "OpenPort raw response received"
-            else -> result.statusMessage
+            result.statusMessage.isNotBlank() ->
+                result.statusMessage
+            else ->
+                "No response from OpenPort"
         }
 
         val errorSummary = when {
-            result.success -> "Last Error: None"
-            looksLikeAdapterRejection(result.responseAscii) ->
+            adapterRejected ->
                 "Last Error: Adapter rejected command"
+            result.success ->
+                "Last Error: None"
             result.statusMessage.isNotBlank() ->
                 "Last Error: ${result.statusMessage}"
-            else -> "Last Error: Unknown"
+            else ->
+                "Last Error: Unknown"
         }
 
         return OpenPortInterpretedResponse(
@@ -43,12 +51,12 @@ class OpenPortResponseInterpreter {
         val normalized = responseAscii.trim().lowercase()
 
         return when {
+            looksLikeAdapterRejection(normalized) ->
+                "Response Type: Adapter rejection"
             normalized.contains("ati") || normalized.contains("firmware") ->
                 "Response Type: Adapter info response"
             normalized.contains("ok") || normalized.contains("ack") ->
                 "Response Type: Adapter acknowledgment"
-            looksLikeAdapterRejection(normalized) ->
-                "Response Type: Adapter rejection"
             else ->
                 "Response Type: OpenPort ASCII response"
         }
