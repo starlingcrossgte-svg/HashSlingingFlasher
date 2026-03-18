@@ -27,14 +27,26 @@ class OpenPortInterrogator(private val context: Context) {
         val busMode = when {
             normalized == "ata" -> "Bus Mode: None"
             normalized.startsWith("at06") && normalized.contains("500000") -> "Bus Mode: CAN 500000"
-            normalized.startsWith("atsp") -> "Bus Mode: CAN"
+            normalized.startsWith("atsp") -> "Bus Mode: CAN protocol select"
+            normalized.startsWith("ati") -> "Bus Mode: Adapter info"
+            normalized.startsWith("atrv") -> "Bus Mode: Adapter voltage query"
+            normalized.startsWith("at") -> "Bus Mode: OpenPort adapter command"
             else -> "Bus Mode: Manual OpenPort"
+        }
+
+        val interrogationPath = when {
+            normalized == "ata" ->
+                "Interrogation Path: OpenPort ASCII (direct ATA)"
+            normalized.startsWith("at") ->
+                "Interrogation Path: OpenPort ASCII (ATA wake + adapter command)"
+            else ->
+                "Interrogation Path: OpenPort ASCII (ATA wake + manual payload)"
         }
 
         return OpenPortCommandProfile(
             normalizedCommand = normalized,
             displayCommand = command.trim(),
-            interrogationPath = "Interrogation Path: OpenPort ASCII",
+            interrogationPath = interrogationPath,
             busModeSummary = busMode
         )
     }
