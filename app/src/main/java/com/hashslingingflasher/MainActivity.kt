@@ -27,9 +27,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var usbPermissionHelper: UsbPermissionHelper
     private lateinit var openPortStatusPresenter: OpenPortStatusPresenter
     private lateinit var manualCommandPresenter: ManualCommandPresenter
-    private lateinit var commandPresetHelper: CommandPresetHelper
     private lateinit var openPortStatusRefresher: OpenPortStatusRefresher
     private lateinit var openPortUsbEventHandler: OpenPortUsbEventHandler
+    private lateinit var openPortInterrogator: OpenPortInterrogator
 
     private lateinit var appTitleText: TextView
     private lateinit var statusMessageText: TextView
@@ -50,6 +50,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var commandPresetSpinner: Spinner
     private lateinit var manualCommandInput: EditText
     private lateinit var sendManualCommandButton: Button
+    private lateinit var endSessionButton: Button
     private lateinit var manualCommandResponseText: TextView
 
     private lateinit var developerLogText: TextView
@@ -104,10 +105,12 @@ class MainActivity : AppCompatActivity() {
             manualCommandResponseText = manualCommandResponseText
         )
 
-        commandPresetHelper = CommandPresetHelper(
+        val commandPresetHelper = CommandPresetHelper(
             spinner = commandPresetSpinner,
             manualCommandInput = manualCommandInput
         )
+
+        openPortInterrogator = OpenPortInterrogator(usbManager = UsbDeviceManager(this))
 
         openPortStatusRefresher = OpenPortStatusRefresher(
             usbManager = usbManager,
@@ -150,6 +153,10 @@ class MainActivity : AppCompatActivity() {
             sendManualCommand(command)
         }
 
+        endSessionButton.setOnClickListener {
+            endManualSession()
+        }
+
         clearLogsButton.setOnClickListener {
             EcuLogger.clear()
             refreshOpenPortStatusOnly()
@@ -163,6 +170,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        openPortInterrogator.endManualSession()
         unregisterReceiverSafely()
     }
 
@@ -186,6 +194,7 @@ class MainActivity : AppCompatActivity() {
         commandPresetSpinner = findViewById(R.id.commandPresetSpinner)
         manualCommandInput = findViewById(R.id.manualCommandInput)
         sendManualCommandButton = findViewById(R.id.sendManualCommandButton)
+        endSessionButton = findViewById(R.id.endSessionButton)
         manualCommandResponseText = findViewById(R.id.manualCommandResponseText)
 
         developerLogText = findViewById(R.id.developerLogText)
@@ -242,21 +251,34 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        val interrogator = OpenPortInterrogator(this)
-        val profile = interrogator.profileCommand(command)
+        val profile = openPortInterrogator.profileCommand(command)
         manualCommandPresenter.showCommandSending(command, profile)
 
         thread {
-            val result = interrogator.runManualCommand(command)
+            val result = openPortInterrogator.runManualCommand(command)
 
             runOnUiThread {
                 manualCommandPresenter.showCommandResult(result)
-
                 EcuLogger.main("Manual command sent: $command")
                 EcuLogger.main(result.transportResult.statusMessage)
                 openPortStatusPresenter.refreshDeveloperLog()
                 Toast.makeText(this, "Manual command sent", Toast.LENGTH_SHORT).show()
             }
+        }
+    }
+
+    private fun endManualSession() {
+        val ended = openPortInterrogator.endManualSession()
+
+        if (ended) {
+            manualCommandPresenter.showSessionEnded()
+            EcuLogger.main("Manual session ended")
+            openPortStatusPresenter.refreshDeveloperLog()
+            Toast.makeText(this, "OpenPort session ended", Toast.LENGTH_SHORT).show()
+        } else {
+            EcuLogger.main("No active manual session to end")
+            openPortStatusPresenter.refreshDeveloperLog()
+            Toast.makeText(this, "No active session", Toast.LENGTH_SHORT).show()
         }
     }
 }

@@ -1,7 +1,5 @@
 package com.hashslingingflasher
 
-import android.content.Context
-
 data class OpenPortCommandProfile(
     val normalizedCommand: String,
     val displayCommand: String,
@@ -19,13 +17,14 @@ data class OpenPortInterrogationResult(
     val errorSummary: String
 )
 
-class OpenPortInterrogator(private val context: Context) {
+class OpenPortInterrogator(
+    private val usbDeviceManager: UsbDeviceManager
+) {
 
     private val responseInterpreter = OpenPortResponseInterpreter()
 
     fun profileCommand(command: String): OpenPortCommandProfile {
         val normalized = command.trim().lowercase()
-        val skipAutoAtaWake = shouldSkipAutoAtaWake(normalized)
 
         val busMode = when {
             normalized == "ata" -> "Bus Mode: None"
@@ -47,17 +46,7 @@ class OpenPortInterrogator(private val context: Context) {
             else -> "Command Family: Manual payload"
         }
 
-        val sendSequence = when {
-            normalized == "ata" ->
-                "Send Sequence: direct ATA only"
-            skipAutoAtaWake ->
-                "Send Sequence: direct command only (ATA wake bypassed)"
-            normalized.startsWith("at") ->
-                "Send Sequence: auto ATA wake, then adapter command"
-            else ->
-                "Send Sequence: auto ATA wake, then manual payload"
-        }
-
+        val sendSequence = "Send Sequence: direct command only"
         val interrogationPath = "Interrogation Path: OpenPort ASCII"
 
         return OpenPortCommandProfile(
@@ -72,11 +61,7 @@ class OpenPortInterrogator(private val context: Context) {
 
     fun runManualCommand(command: String): OpenPortInterrogationResult {
         val profile = profileCommand(command)
-        val skipAutoAtaWake = shouldSkipAutoAtaWake(profile.normalizedCommand)
-        val transportResult = UsbDeviceManager(context).sendCustomAsciiCommand(
-            command = command,
-            skipAutoAtaWake = skipAutoAtaWake
-        )
+        val transportResult = usbDeviceManager.sendCustomAsciiCommand(command)
         val interpreted = responseInterpreter.interpret(transportResult)
 
         return OpenPortInterrogationResult(
@@ -86,11 +71,5 @@ class OpenPortInterrogator(private val context: Context) {
             statusSummary = interpreted.statusSummary,
             errorSummary = interpreted.errorSummary
         )
-    }
-
-    private fun shouldSkipAutoAtaWake(normalizedCommand: String): Boolean {
-        return normalizedCommand == "ata" ||
-            normalizedCommand.startsWith("ati") ||
-            normalizedCommand.startsWith("at06")
     }
 }

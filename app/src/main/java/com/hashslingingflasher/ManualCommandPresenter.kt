@@ -1,7 +1,6 @@
 package com.hashslingingflasher
 
 import android.widget.TextView
-import com.hashslingingflasher.OpenPortInterrogationResult
 
 class ManualCommandPresenter(
     private val statusMessageText: TextView,
@@ -57,10 +56,8 @@ class ManualCommandPresenter(
         manualCommandResponseText.text = when {
             result.transportResult.responseAscii.isNotEmpty() ->
                 result.transportResult.responseAscii.trim()
-
             result.transportResult.responseHex.isNotEmpty() ->
                 result.transportResult.responseHex
-
             else ->
                 result.transportResult.statusMessage
         }
@@ -73,5 +70,12 @@ class ManualCommandPresenter(
             "${result.profile.commandFamilySummary} | ${result.profile.sendSequenceSummary}"
         summaryResponseTypeText.text = result.responseTypeSummary
         summaryErrorText.text = result.errorSummary
+    }
+
+    fun showSessionEnded() {
+        statusMessageText.text = "OpenPort session ended"
+        manualCommandResponseText.text = "Session ended"
+        summaryResponseTypeText.text = "Response Type: None"
+        summaryErrorText.text = "Last Error: None"
     }
 }

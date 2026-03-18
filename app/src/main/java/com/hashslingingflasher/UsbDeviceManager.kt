@@ -1,9 +1,6 @@
 package com.hashslingingflasher
 
 import android.content.Context
-import android.hardware.usb.UsbDeviceConnection
-import android.hardware.usb.UsbEndpoint
-import java.nio.charset.Charset
 
 data class TactrixTestResult(
     val success: Boolean,
@@ -28,6 +25,9 @@ class UsbDeviceManager(private val context: Context) {
     )
 
     private val transport = OpenPortTransport()
+
+    @Volatile
+    private var manualSession: OpenPortSession? = null
 
     fun openTactrixChannel(): TactrixTestResult {
         val sessionResult = sessionManager.openSession("Opening Tactrix connection")
@@ -106,11 +106,9 @@ class UsbDeviceManager(private val context: Context) {
         }
     }
 
-    fun sendCustomAsciiCommand(
-        command: String,
-        skipAutoAtaWake: Boolean = false
-    ): TactrixTestResult {
-        val sessionResult = sessionManager.openSession("Opening Tactrix connection for manual command")
+    @Synchronized
+    fun sendCustomAsciiCommand(command: String): TactrixTestResult {
+        val sessionResult = getOrOpenManualSession()
         if (sessionResult.error != null) {
             return sessionResult.error
         }
@@ -124,67 +122,79 @@ class UsbDeviceManager(private val context: Context) {
             ""
         )
 
-        try {
-            val normalizedCommand = if (command.endsWith("\r\n")) {
-                command
-            } else {
-                "$command\r\n"
-            }
-
-            val trimmedLowerCommand = command.trim().lowercase()
-            val shouldSendAtaWake = !skipAutoAtaWake && trimmedLowerCommand != "ata"
-
-            if (shouldSendAtaWake) {
-                val wakeResult = transport.sendAsciiCommand(
-                    connection = session.connection,
-                    endpointOut = session.endpointOut,
-                    endpointIn = session.endpointIn,
-                    commandLabel = "Manual command ATA wake",
-                    commandString = "ata\r\n"
-                )
-
-                if (wakeResult.responseAscii.contains("aro", ignoreCase = true)) {
-                    return TactrixTestResult(
-                        false,
-                        "OpenPort did not respond to ATA wake",
-                        wakeResult.bytesSent,
-                        wakeResult.bytesReceived,
-                        wakeResult.responseHex,
-                        wakeResult.responseAscii
-                    )
-                }
-            } else if (skipAutoAtaWake) {
-                EcuLogger.usb("Skipping automatic ATA wake because skipAutoAtaWake=true")
-            } else {
-                EcuLogger.usb("Skipping automatic ATA wake because command is ATA")
-            }
-
-            val result = transport.sendAsciiCommand(
-                connection = session.connection,
-                endpointOut = session.endpointOut,
-                endpointIn = session.endpointIn,
-                commandLabel = "Manual OpenPort command",
-                commandString = normalizedCommand
-            )
-
-            val gotResponse = result.bytesReceived > 0 &&
-                (result.responseAscii.isNotEmpty() || result.responseHex.isNotEmpty())
-
-            return TactrixTestResult(
-                success = gotResponse,
-                statusMessage = if (gotResponse) {
-                    "OpenPort response received"
-                } else {
-                    "No response from OpenPort"
-                },
-                bytesSent = result.bytesSent,
-                bytesReceived = result.bytesReceived,
-                responseHex = result.responseHex,
-                responseAscii = result.responseAscii
-            )
-        } finally {
-            sessionManager.closeSession(session)
+        val normalizedCommand = if (command.endsWith("\r\n")) {
+            command
+        } else {
+            "$command\r\n"
         }
+
+        EcuLogger.usb("Manual command path is direct-only; automatic ATA wake disabled")
+
+        val result = transport.sendAsciiCommand(
+            connection = session.connection,
+            endpointOut = session.endpointOut,
+            endpointIn = session.endpointIn,
+            commandLabel = "Manual OpenPort command",
+            commandString = normalizedCommand
+        )
+
+        val gotResponse = result.bytesReceived > 0 &&
+            (result.responseAscii.isNotEmpty() || result.responseHex.isNotEmpty())
+
+        return TactrixTestResult(
+            success = gotResponse,
+            statusMessage = if (gotResponse) {
+                "OpenPort response received"
+            } else {
+                "No response from OpenPort"
+            },
+            bytesSent = result.bytesSent,
+            bytesReceived = result.bytesReceived,
+            responseHex = result.responseHex,
+            responseAscii = result.responseAscii
+        )
+    }
+
+    @Synchronized
+    fun endManualSession(): Boolean {
+        val session = manualSession ?: run {
+            EcuLogger.usb("No active manual Tactrix session to close")
+            return false
+        }
+
+        sessionManager.closeSession(session)
+        manualSession = null
+        EcuLogger.usb("Persistent manual Tactrix session ended")
+        return true
+    }
+
+    @Synchronized
+    private fun getOrOpenManualSession(): SessionOpenResult {
+        val existingSession = manualSession
+        if (existingSession != null) {
+            EcuLogger.usb("Reusing persistent manual Tactrix session")
+            return SessionOpenResult(session = existingSession)
+        }
+
+        val sessionResult = sessionManager.openSession("Opening Tactrix connection for manual command")
+        if (sessionResult.error != null) {
+            return sessionResult
+        }
+
+        val session = sessionResult.session ?: return SessionOpenResult(
+            error = TactrixTestResult(
+                false,
+                "Failed to open Tactrix session",
+                -1,
+                -1,
+                "",
+                ""
+            )
+        )
+
+        manualSession = session
+        EcuLogger.usb("Persistent manual Tactrix session opened")
+        return SessionOpenResult(session = session)
     }
 
     private fun sendSubaruSsmQuery(
