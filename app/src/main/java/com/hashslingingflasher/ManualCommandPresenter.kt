@@ -32,7 +32,7 @@ class ManualCommandPresenter(
         summaryOpenPortCommandText.text = "OpenPort Command: ${profile.displayCommand}"
         summaryBusModeText.text = profile.busModeSummary
         summaryEcuQueryText.text =
-            "${profile.commandFamilySummary} | ${profile.sendSequenceSummary}"
+            "${profile.interrogationPath} | ${profile.commandFamilySummary}"
 
         statusMessageText.text = "Sending command..."
         manualCommandResponseText.text = "Waiting for OpenPort response..."
@@ -67,7 +67,7 @@ class ManualCommandPresenter(
             "OpenPort Command: ${result.profile.displayCommand}"
         summaryBusModeText.text = result.profile.busModeSummary
         summaryEcuQueryText.text =
-            "${result.profile.commandFamilySummary} | ${result.profile.sendSequenceSummary}"
+            "${result.profile.interrogationPath} | ${result.profile.commandFamilySummary}"
         summaryResponseTypeText.text = result.responseTypeSummary
         summaryErrorText.text = result.errorSummary
     }
