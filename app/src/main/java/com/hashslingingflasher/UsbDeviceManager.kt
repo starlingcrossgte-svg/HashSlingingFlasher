@@ -196,7 +196,8 @@ class UsbDeviceManager(private val context: Context) {
             session = session
         )
 
-        val gotResponse = rawResult.bytesSent > 0 || rawResult.bytesReceived > 0
+        val gotResponse = rawResult.bytesReceived > 0 &&
+            (rawResult.responseAscii.isNotEmpty() || rawResult.responseHex.isNotEmpty())
 
         return TactrixTestResult(
             success = gotResponse,
