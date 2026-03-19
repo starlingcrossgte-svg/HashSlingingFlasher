@@ -6,10 +6,16 @@ import android.widget.Spinner
 class CommandModeHelper(
     private val spinner: Spinner
 ) {
+    companion object {
+        const val MODE_ADAPTER_ASCII = "Adapter ASCII"
+        const val MODE_RAW_PACKET = "Raw Packet"
+        const val MODE_SUBARU_SSM_KLINE = "Subaru SSM / K-line"
+    }
+
     private val modeLabels = listOf(
-        "Adapter ASCII",
-        "Raw Packet",
-        "Subaru SSM / K-line"
+        MODE_ADAPTER_ASCII,
+        MODE_RAW_PACKET,
+        MODE_SUBARU_SSM_KLINE
     )
 
     fun bind() {

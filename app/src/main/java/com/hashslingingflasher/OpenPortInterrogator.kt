@@ -60,7 +60,7 @@ class OpenPortInterrogator(
     }
 
     fun runManualCommand(command: String): OpenPortInterrogationResult {
-        val profile = profileCommand(command, "Adapter ASCII")
+        val profile = profileCommand(command, CommandModeHelper.MODE_ADAPTER_ASCII)
         val transportResult = usbDeviceManager.sendCustomAsciiCommand(command)
         val interpreted = responseInterpreter.interpret(transportResult)
 
