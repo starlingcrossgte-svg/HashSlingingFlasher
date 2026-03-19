@@ -89,6 +89,7 @@ class MainActivity : AppCompatActivity() {
             summaryEcuQueryText = summaryEcuQueryText,
             summaryResponseTypeText = summaryResponseTypeText,
             summaryErrorText = summaryErrorText,
+            manualCommandResponseText = manualCommandResponseText,
             developerLogText = developerLogText
         )
 
