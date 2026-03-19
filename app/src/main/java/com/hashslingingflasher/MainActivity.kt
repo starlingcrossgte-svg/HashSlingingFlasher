@@ -48,8 +48,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var summaryResponseTypeText: TextView
     private lateinit var summaryErrorText: TextView
 
-    private lateinit var commandModeSpinner: Spinner
     private lateinit var commandPresetSpinner: Spinner
+    private lateinit var commandModeSpinner: Spinner
     private lateinit var manualCommandInput: EditText
     private lateinit var sendManualCommandButton: Button
     private lateinit var endSessionButton: Button
@@ -89,7 +89,6 @@ class MainActivity : AppCompatActivity() {
             summaryEcuQueryText = summaryEcuQueryText,
             summaryResponseTypeText = summaryResponseTypeText,
             summaryErrorText = summaryErrorText,
-            manualCommandResponseText = manualCommandResponseText,
             developerLogText = developerLogText
         )
 
@@ -107,15 +106,21 @@ class MainActivity : AppCompatActivity() {
             manualCommandResponseText = manualCommandResponseText
         )
 
-    commandModeHelper = CommandModeHelper(
-        spinner = commandModeSpinner
-    )
         val commandPresetHelper = CommandPresetHelper(
             spinner = commandPresetSpinner,
             manualCommandInput = manualCommandInput
         )
 
-        openPortInterrogator = OpenPortInterrogator(usbDeviceManager = UsbDeviceManager(this))
+        commandModeHelper = CommandModeHelper(
+            spinner = commandModeSpinner,
+            onModeChanged = { mode ->
+                commandPresetHelper.updateForMode(mode)
+            }
+        )
+
+        openPortInterrogator = OpenPortInterrogator(
+            usbDeviceManager = UsbDeviceManager(this)
+        )
 
         openPortStatusRefresher = OpenPortStatusRefresher(
             usbManager = usbManager,
@@ -143,8 +148,8 @@ class MainActivity : AppCompatActivity() {
             }
         )
 
-    commandModeHelper.bind()
-        commandPresetHelper.bind()
+        commandPresetHelper.bind(CommandModeHelper.MODE_ADAPTER_ASCII)
+        commandModeHelper.bind()
         registerUsbReceiver()
 
         appTitleText.text = "HashSlingingFlasher"
@@ -197,7 +202,7 @@ class MainActivity : AppCompatActivity() {
         summaryResponseTypeText = findViewById(R.id.summaryResponseTypeText)
         summaryErrorText = findViewById(R.id.summaryErrorText)
 
-    commandModeSpinner = findViewById(R.id.commandModeSpinner)
+        commandModeSpinner = findViewById(R.id.commandModeSpinner)
         commandPresetSpinner = findViewById(R.id.commandPresetSpinner)
         manualCommandInput = findViewById(R.id.manualCommandInput)
         sendManualCommandButton = findViewById(R.id.sendManualCommandButton)
@@ -258,8 +263,9 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-    val selectedMode = commandModeHelper.selectedModeLabel()
-    EcuLogger.main("Manual mode selected: $selectedMode")
+        val selectedMode = commandModeHelper.selectedModeLabel()
+        EcuLogger.main("Manual mode selected: $selectedMode")
+
         val profile = openPortInterrogator.profileCommand(command, selectedMode)
         manualCommandPresenter.showCommandSending(command, profile)
 

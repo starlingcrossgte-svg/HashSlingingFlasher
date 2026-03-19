@@ -1,10 +1,13 @@
 package com.hashslingingflasher
 
+import android.view.View
+import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Spinner
 
 class CommandModeHelper(
-    private val spinner: Spinner
+    private val spinner: Spinner,
+    private val onModeChanged: (String) -> Unit
 ) {
     companion object {
         const val MODE_ADAPTER_ASCII = "Adapter ASCII"
@@ -26,6 +29,21 @@ class CommandModeHelper(
         )
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spinner.adapter = adapter
+
+        spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(
+                parent: AdapterView<*>?,
+                view: View?,
+                position: Int,
+                id: Long
+            ) {
+                onModeChanged(modeLabels[position])
+            }
+
+            override fun onNothingSelected(parent: AdapterView<*>?) {
+            }
+        }
+
         spinner.setSelection(0)
     }
 
