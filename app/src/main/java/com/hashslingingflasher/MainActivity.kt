@@ -27,6 +27,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var usbPermissionHelper: UsbPermissionHelper
     private lateinit var openPortStatusPresenter: OpenPortStatusPresenter
     private lateinit var manualCommandPresenter: ManualCommandPresenter
+    private lateinit var commandModeHelper: CommandModeHelper
     private lateinit var openPortStatusRefresher: OpenPortStatusRefresher
     private lateinit var openPortUsbEventHandler: OpenPortUsbEventHandler
     private lateinit var openPortInterrogator: OpenPortInterrogator
@@ -47,6 +48,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var summaryResponseTypeText: TextView
     private lateinit var summaryErrorText: TextView
 
+    private lateinit var commandModeSpinner: Spinner
     private lateinit var commandPresetSpinner: Spinner
     private lateinit var manualCommandInput: EditText
     private lateinit var sendManualCommandButton: Button
@@ -105,6 +107,9 @@ class MainActivity : AppCompatActivity() {
             manualCommandResponseText = manualCommandResponseText
         )
 
+    commandModeHelper = CommandModeHelper(
+        spinner = commandModeSpinner
+    )
         val commandPresetHelper = CommandPresetHelper(
             spinner = commandPresetSpinner,
             manualCommandInput = manualCommandInput
@@ -138,6 +143,7 @@ class MainActivity : AppCompatActivity() {
             }
         )
 
+    commandModeHelper.bind()
         commandPresetHelper.bind()
         registerUsbReceiver()
 
@@ -191,6 +197,7 @@ class MainActivity : AppCompatActivity() {
         summaryResponseTypeText = findViewById(R.id.summaryResponseTypeText)
         summaryErrorText = findViewById(R.id.summaryErrorText)
 
+    commandModeSpinner = findViewById(R.id.commandModeSpinner)
         commandPresetSpinner = findViewById(R.id.commandPresetSpinner)
         manualCommandInput = findViewById(R.id.manualCommandInput)
         sendManualCommandButton = findViewById(R.id.sendManualCommandButton)
