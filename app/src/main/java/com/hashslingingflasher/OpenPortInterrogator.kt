@@ -72,4 +72,8 @@ class OpenPortInterrogator(
             errorSummary = interpreted.errorSummary
         )
     }
+
+    fun endManualSession(): Boolean {
+        return usbDeviceManager.endManualSession()
+    }
 }
