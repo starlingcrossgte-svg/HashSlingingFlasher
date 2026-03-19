@@ -71,10 +71,16 @@ class CommandPresetHelper(
                 CommandPreset("raw stub - custom bytes", "AA BB CC")
             )
 
+            CommandModeHelper.MODE_SUBARU_SSM_CAN -> listOf(
+                CommandPreset("ssm can - init marker", "SSM_CAN_INIT"),
+                CommandPreset("ssm can - read marker", "SSM_CAN_READ"),
+                CommandPreset("ssm can - custom payload", "80 10 F0 01 BF")
+            )
+
             CommandModeHelper.MODE_SUBARU_SSM_KLINE -> listOf(
-                CommandPreset("ssm stub - init marker", "SSM_INIT"),
-                CommandPreset("ssm stub - read marker", "SSM_READ"),
-                CommandPreset("ssm stub - custom payload", "80 10 F0 01 BF")
+                CommandPreset("ssm kline - init marker", "SSM_KLINE_INIT"),
+                CommandPreset("ssm kline - read marker", "SSM_KLINE_READ"),
+                CommandPreset("ssm kline - custom payload", "80 10 F0 01 BF")
             )
 
             else -> listOf(

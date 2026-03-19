@@ -32,6 +32,8 @@ class OpenPortInterrogator(
             normalized.startsWith("ati") -> "Bus Mode: Adapter info"
             normalized.startsWith("atrv") -> "Bus Mode: Adapter voltage query"
             normalized.startsWith("at") -> "Bus Mode: OpenPort adapter command"
+            selectedMode == CommandModeHelper.MODE_SUBARU_SSM_CAN -> "Bus Mode: Subaru SSM over CAN"
+            selectedMode == CommandModeHelper.MODE_SUBARU_SSM_KLINE -> "Bus Mode: Subaru SSM over K-line"
             else -> "Bus Mode: Manual OpenPort"
         }
 
@@ -48,7 +50,8 @@ class OpenPortInterrogator(
         val sendSequence = when (selectedMode) {
             CommandModeHelper.MODE_ADAPTER_ASCII -> "Send Sequence: direct command only"
             CommandModeHelper.MODE_RAW_PACKET -> "Send Sequence: raw packet lane selected"
-            CommandModeHelper.MODE_SUBARU_SSM_KLINE -> "Send Sequence: Subaru SSM / K-line lane selected"
+            CommandModeHelper.MODE_SUBARU_SSM_CAN -> "Send Sequence: Subaru SSM CAN lane selected"
+            CommandModeHelper.MODE_SUBARU_SSM_KLINE -> "Send Sequence: Subaru SSM K-line lane selected"
             else -> "Send Sequence: unknown mode selected"
         }
 
@@ -77,7 +80,11 @@ class OpenPortInterrogator(
                 profile = profile,
                 statusMessage = "Raw packet mode not implemented yet"
             )
-            CommandModeHelper.MODE_SUBARU_SSM_KLINE -> runSubaruSsmCommand(command, profile)
+            CommandModeHelper.MODE_SUBARU_SSM_CAN -> runSubaruSsmCanCommand(command, profile)
+            CommandModeHelper.MODE_SUBARU_SSM_KLINE -> buildModeStubResult(
+                profile = profile,
+                statusMessage = "Subaru SSM K-line mode not implemented yet"
+            )
             else -> buildModeStubResult(
                 profile = profile,
                 statusMessage = "Unknown manual command mode"
@@ -105,7 +112,7 @@ class OpenPortInterrogator(
         )
     }
 
-    private fun runSubaruSsmCommand(
+    private fun runSubaruSsmCanCommand(
         command: String,
         profile: OpenPortCommandProfile
     ): OpenPortInterrogationResult {

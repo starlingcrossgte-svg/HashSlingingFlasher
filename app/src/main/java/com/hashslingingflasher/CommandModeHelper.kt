@@ -12,12 +12,14 @@ class CommandModeHelper(
     companion object {
         const val MODE_ADAPTER_ASCII = "Adapter ASCII"
         const val MODE_RAW_PACKET = "Raw Packet"
-        const val MODE_SUBARU_SSM_KLINE = "Subaru SSM / K-line"
+        const val MODE_SUBARU_SSM_CAN = "Subaru SSM (CAN)"
+        const val MODE_SUBARU_SSM_KLINE = "Subaru SSM (K-line)"
     }
 
     private val modeLabels = listOf(
         MODE_ADAPTER_ASCII,
         MODE_RAW_PACKET,
+        MODE_SUBARU_SSM_CAN,
         MODE_SUBARU_SSM_KLINE
     )
 
