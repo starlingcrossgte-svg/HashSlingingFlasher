@@ -23,7 +23,7 @@ class OpenPortInterrogator(
 
     private val responseInterpreter = OpenPortResponseInterpreter()
 
-    fun profileCommand(command: String): OpenPortCommandProfile {
+    fun profileCommand(command: String, selectedMode: String): OpenPortCommandProfile {
         val normalized = command.trim().lowercase()
 
         val busMode = when {
@@ -47,7 +47,7 @@ class OpenPortInterrogator(
         }
 
         val sendSequence = "Send Sequence: direct command only"
-        val interrogationPath = "Interrogation Path: OpenPort ASCII"
+        val interrogationPath = "Interrogation Path: $selectedMode"
 
         return OpenPortCommandProfile(
             normalizedCommand = normalized,
@@ -60,7 +60,7 @@ class OpenPortInterrogator(
     }
 
     fun runManualCommand(command: String): OpenPortInterrogationResult {
-        val profile = profileCommand(command)
+        val profile = profileCommand(command, "Adapter ASCII")
         val transportResult = usbDeviceManager.sendCustomAsciiCommand(command)
         val interpreted = responseInterpreter.interpret(transportResult)
 

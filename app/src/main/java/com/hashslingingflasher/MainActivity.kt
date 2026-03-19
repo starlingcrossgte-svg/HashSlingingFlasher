@@ -260,7 +260,7 @@ class MainActivity : AppCompatActivity() {
 
     val selectedMode = commandModeHelper.selectedModeLabel()
     EcuLogger.main("Manual mode selected: $selectedMode")
-        val profile = openPortInterrogator.profileCommand(command)
+        val profile = openPortInterrogator.profileCommand(command, selectedMode)
         manualCommandPresenter.showCommandSending(command, profile)
 
         thread {
