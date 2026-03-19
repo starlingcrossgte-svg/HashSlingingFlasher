@@ -110,7 +110,7 @@ class MainActivity : AppCompatActivity() {
             manualCommandInput = manualCommandInput
         )
 
-        openPortInterrogator = OpenPortInterrogator(usbManager = UsbDeviceManager(this))
+        openPortInterrogator = OpenPortInterrogator(usbDeviceManager = UsbDeviceManager(this))
 
         openPortStatusRefresher = OpenPortStatusRefresher(
             usbManager = usbManager,
