@@ -156,6 +156,63 @@ class UsbDeviceManager(private val context: Context) {
     }
 
     @Synchronized
+    fun sendSubaruSsmCommand(command: String): TactrixTestResult {
+        val sessionResult = getOrOpenManualSession()
+        if (sessionResult.error != null) {
+            return sessionResult.error
+        }
+
+        val session = sessionResult.session ?: return TactrixTestResult(
+            false,
+            "Failed to open Tactrix session",
+            -1,
+            -1,
+            "",
+            ""
+        )
+
+        EcuLogger.usb("Subaru SSM command requested: $command")
+
+        val at06Result = transport.sendAsciiCommand(
+            connection = session.connection,
+            endpointOut = session.endpointOut,
+            endpointIn = session.endpointIn,
+            commandLabel = "OpenPort AT06 CAN command",
+            commandString = "at06 0 500000 0\r\n"
+        )
+
+        if (at06Result.responseAscii.contains("aro", ignoreCase = true)) {
+            return TactrixTestResult(
+                false,
+                "OpenPort CAN bus open failed before Subaru SSM query",
+                at06Result.bytesSent,
+                at06Result.bytesReceived,
+                at06Result.responseHex,
+                at06Result.responseAscii
+            )
+        }
+
+        val rawResult = sendSubaruSsmQuery(
+            session = session
+        )
+
+        val gotResponse = rawResult.bytesSent > 0 || rawResult.bytesReceived > 0
+
+        return TactrixTestResult(
+            success = gotResponse,
+            statusMessage = if (gotResponse) {
+                "Subaru SSM response received"
+            } else {
+                "No response from Subaru SSM query"
+            },
+            bytesSent = rawResult.bytesSent,
+            bytesReceived = rawResult.bytesReceived,
+            responseHex = rawResult.responseHex,
+            responseAscii = rawResult.responseAscii
+        )
+    }
+
+    @Synchronized
     fun endManualSession(): Boolean {
         val session = manualSession ?: run {
             EcuLogger.usb("No active manual Tactrix session to close")

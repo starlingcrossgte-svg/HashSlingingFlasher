@@ -77,10 +77,7 @@ class OpenPortInterrogator(
                 profile = profile,
                 statusMessage = "Raw packet mode not implemented yet"
             )
-            CommandModeHelper.MODE_SUBARU_SSM_KLINE -> buildModeStubResult(
-                profile = profile,
-                statusMessage = "Subaru SSM / K-line mode not implemented yet"
-            )
+            CommandModeHelper.MODE_SUBARU_SSM_KLINE -> runSubaruSsmCommand(command, profile)
             else -> buildModeStubResult(
                 profile = profile,
                 statusMessage = "Unknown manual command mode"
@@ -97,6 +94,22 @@ class OpenPortInterrogator(
         profile: OpenPortCommandProfile
     ): OpenPortInterrogationResult {
         val transportResult = usbDeviceManager.sendCustomAsciiCommand(command)
+        val interpreted = responseInterpreter.interpret(transportResult)
+
+        return OpenPortInterrogationResult(
+            profile = profile,
+            transportResult = transportResult,
+            responseTypeSummary = interpreted.responseTypeSummary,
+            statusSummary = interpreted.statusSummary,
+            errorSummary = interpreted.errorSummary
+        )
+    }
+
+    private fun runSubaruSsmCommand(
+        command: String,
+        profile: OpenPortCommandProfile
+    ): OpenPortInterrogationResult {
+        val transportResult = usbDeviceManager.sendSubaruSsmCommand(command)
         val interpreted = responseInterpreter.interpret(transportResult)
 
         return OpenPortInterrogationResult(
