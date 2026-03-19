@@ -264,7 +264,7 @@ class MainActivity : AppCompatActivity() {
         manualCommandPresenter.showCommandSending(command, profile)
 
         thread {
-            val result = openPortInterrogator.runManualCommand(command)
+            val result = openPortInterrogator.runManualCommand(command, selectedMode)
 
             runOnUiThread {
                 manualCommandPresenter.showCommandResult(result)

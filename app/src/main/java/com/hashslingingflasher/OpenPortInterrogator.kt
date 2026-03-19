@@ -20,7 +20,6 @@ data class OpenPortInterrogationResult(
 class OpenPortInterrogator(
     private val usbDeviceManager: UsbDeviceManager
 ) {
-
     private val responseInterpreter = OpenPortResponseInterpreter()
 
     fun profileCommand(command: String, selectedMode: String): OpenPortCommandProfile {
@@ -46,7 +45,13 @@ class OpenPortInterrogator(
             else -> "Command Family: Manual payload"
         }
 
-        val sendSequence = "Send Sequence: direct command only"
+        val sendSequence = when (selectedMode) {
+            CommandModeHelper.MODE_ADAPTER_ASCII -> "Send Sequence: direct command only"
+            CommandModeHelper.MODE_RAW_PACKET -> "Send Sequence: raw packet lane selected"
+            CommandModeHelper.MODE_SUBARU_SSM_KLINE -> "Send Sequence: Subaru SSM / K-line lane selected"
+            else -> "Send Sequence: unknown mode selected"
+        }
+
         val interrogationPath = "Interrogation Path: $selectedMode"
 
         return OpenPortCommandProfile(
@@ -60,7 +65,37 @@ class OpenPortInterrogator(
     }
 
     fun runManualCommand(command: String): OpenPortInterrogationResult {
-        val profile = profileCommand(command, CommandModeHelper.MODE_ADAPTER_ASCII)
+        return runManualCommand(command, CommandModeHelper.MODE_ADAPTER_ASCII)
+    }
+
+    fun runManualCommand(command: String, selectedMode: String): OpenPortInterrogationResult {
+        val profile = profileCommand(command, selectedMode)
+
+        return when (selectedMode) {
+            CommandModeHelper.MODE_ADAPTER_ASCII -> runAdapterAsciiCommand(command, profile)
+            CommandModeHelper.MODE_RAW_PACKET -> buildModeStubResult(
+                profile = profile,
+                statusMessage = "Raw packet mode not implemented yet"
+            )
+            CommandModeHelper.MODE_SUBARU_SSM_KLINE -> buildModeStubResult(
+                profile = profile,
+                statusMessage = "Subaru SSM / K-line mode not implemented yet"
+            )
+            else -> buildModeStubResult(
+                profile = profile,
+                statusMessage = "Unknown manual command mode"
+            )
+        }
+    }
+
+    fun endManualSession(): Boolean {
+        return usbDeviceManager.endManualSession()
+    }
+
+    private fun runAdapterAsciiCommand(
+        command: String,
+        profile: OpenPortCommandProfile
+    ): OpenPortInterrogationResult {
         val transportResult = usbDeviceManager.sendCustomAsciiCommand(command)
         val interpreted = responseInterpreter.interpret(transportResult)
 
@@ -73,7 +108,27 @@ class OpenPortInterrogator(
         )
     }
 
-    fun endManualSession(): Boolean {
-        return usbDeviceManager.endManualSession()
+    private fun buildModeStubResult(
+        profile: OpenPortCommandProfile,
+        statusMessage: String
+    ): OpenPortInterrogationResult {
+        EcuLogger.main(statusMessage)
+
+        val transportResult = TactrixTestResult(
+            success = false,
+            statusMessage = statusMessage,
+            bytesSent = 0,
+            bytesReceived = 0,
+            responseHex = "",
+            responseAscii = ""
+        )
+
+        return OpenPortInterrogationResult(
+            profile = profile,
+            transportResult = transportResult,
+            responseTypeSummary = "Response Type: Mode stub",
+            statusSummary = statusMessage,
+            errorSummary = "Last Error: $statusMessage"
+        )
     }
 }
