@@ -234,7 +234,7 @@ class UsbDeviceManager(private val context: Context) {
         val baudResult = sendKlineAsciiCommand(
             session = session,
             commandLabel = "OpenPort K-line ISO baud command",
-            commandString = "atib 96\r\n"
+            commandString = "atib 10\r\n"
         )
         if (looksLikeAdapterRejection(baudResult.responseAscii)) {
             return TactrixTestResult(
