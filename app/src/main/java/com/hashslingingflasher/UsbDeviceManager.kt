@@ -1,72 +1,315 @@
 package com.hashslingingflasher
 
 import android.content.Context
-import android.hardware.usb.UsbDevice
-import android.hardware.usb.UsbDeviceConnection
-import android.hardware.usb.UsbEndpoint
-import android.hardware.usb.UsbInterface
-import android.hardware.usb.UsbManager
-import java.util.concurrent.locks.ReentrantLock
-import kotlin.concurrent.withLock
+
+data class TactrixTestResult(
+    val success: Boolean,
+    val statusMessage: String,
+    val bytesSent: Int,
+    val bytesReceived: Int,
+    val responseHex: String,
+    val responseAscii: String = ""
+)
 
 class UsbDeviceManager(private val context: Context) {
 
-    private val lock = ReentrantLock()
-
-    fun sendKlineCommand(session: OpenPortSession, payload: ByteArray): TactrixTestResult {
-        lock.withLock {
-            // Step 1: Send 5-baud wake
-            val wakeResult = send5BaudWake(session)
-            if (!wakeResult.success) return wakeResult
-
-            // Step 2: Construct K-line payload frame
-            val frame = buildKlineFrame(payload)
-
-            // Step 3: Send K-line frame
-            val bytesSent = session.connection.bulkTransfer(
-                session.endpointOut(), frame, frame.size, 2000
-            )
-            if (bytesSent <= 0) return TactrixTestResult(false, "Failed to send K-line payload", bytesSent)
-
-            return TactrixTestResult(true, "K-line payload sent", bytesSent)
-        }
+    companion object {
+        private const val TACTRIX_VENDOR_ID = 1027
+        private const val TACTRIX_PRODUCT_ID = 52301
     }
 
-    private fun send5BaudWake(session: OpenPortSession): TactrixTestResult {
-        // K-line wake: 0x33 sent at 5 baud
-        val wakeByte = byteArrayOf(0x33.toByte())
-        val sent = session.connection.bulkTransfer(
-            session.endpointOut(), wakeByte, wakeByte.size, 5000
+    private val sessionManager = OpenPortUsbSessionManager(
+        context = context,
+        tactrixVendorId = TACTRIX_VENDOR_ID,
+        tactrixProductId = TACTRIX_PRODUCT_ID
+    )
+
+    private val transport = OpenPortTransport()
+
+    @Volatile
+    private var manualSession: OpenPortSession? = null
+
+    fun openTactrixChannel(): TactrixTestResult {
+        val sessionResult = sessionManager.openSession("Opening Tactrix connection")
+        if (sessionResult.error != null) {
+            return sessionResult.error
+        }
+
+        val session = sessionResult.session ?: return TactrixTestResult(
+            false,
+            "Failed to open Tactrix session",
+            -1,
+            -1,
+            "",
+            ""
         )
-        return if (sent > 0) {
-            TactrixTestResult(true, "K-line 5-baud wake sent", sent)
-        } else {
-            TactrixTestResult(false, "K-line 5-baud wake failed", sent)
+
+        try {
+            val ataResult = transport.sendAsciiCommand(
+                connection = session.connection,
+                endpointOut = session.endpointOut,
+                endpointIn = session.endpointIn,
+                commandLabel = "OpenPort ATA command",
+                commandString = "ata\r\n"
+            )
+
+            if (ataResult.responseAscii.contains("aro", ignoreCase = true)) {
+                return TactrixTestResult(
+                    false,
+                    "OpenPort ATA failed before raw transmit test",
+                    ataResult.bytesSent,
+                    ataResult.bytesReceived,
+                    ataResult.responseHex,
+                    ataResult.responseAscii
+                )
+            }
+
+            val at06Result = transport.sendAsciiCommand(
+                connection = session.connection,
+                endpointOut = session.endpointOut,
+                endpointIn = session.endpointIn,
+                commandLabel = "OpenPort AT06 CAN command",
+                commandString = "at06 0 500000 0\r\n"
+            )
+
+            if (at06Result.responseAscii.contains("aro", ignoreCase = true)) {
+                return TactrixTestResult(
+                    false,
+                    "OpenPort CAN bus open failed before raw transmit test",
+                    at06Result.bytesSent,
+                    at06Result.bytesReceived,
+                    at06Result.responseHex,
+                    at06Result.responseAscii
+                )
+            }
+
+            val rawResult = sendSubaruSsmQuery(
+                session = session
+            )
+
+            val rawTransmitSent = rawResult.bytesSent > 0
+
+            return TactrixTestResult(
+                success = rawTransmitSent,
+                statusMessage = if (rawTransmitSent) {
+                    "Raw transmit completed"
+                } else {
+                    "Raw transmit failed"
+                },
+                bytesSent = rawResult.bytesSent,
+                bytesReceived = rawResult.bytesReceived,
+                responseHex = rawResult.responseHex,
+                responseAscii = rawResult.responseAscii
+            )
+        } finally {
+            sessionManager.closeSession(session)
         }
     }
 
-    private fun buildKlineFrame(payload: ByteArray): ByteArray {
-        val header = byteArrayOf(0x80.toByte(), 0x00.toByte(), 0x10.toByte(), 0x00.toByte())
-        val frame = ByteArray(header.size + payload.size + 1)
-        System.arraycopy(header, 0, frame, 0, header.size)
-        System.arraycopy(payload, 0, frame, header.size, payload.size)
-        frame[frame.size - 1] = calculateChecksum(payload)
-        return frame
+    @Synchronized
+    fun sendCustomAsciiCommand(command: String): TactrixTestResult {
+        val sessionResult = getOrOpenManualSession()
+        if (sessionResult.error != null) {
+            return sessionResult.error
+        }
+
+        val session = sessionResult.session ?: return TactrixTestResult(
+            false,
+            "Failed to open Tactrix session",
+            -1,
+            -1,
+            "",
+            ""
+        )
+
+        val normalizedCommand = if (command.endsWith("\r\n")) {
+            command
+        } else {
+            "$command\r\n"
+        }
+
+        EcuLogger.usb("Manual command path is direct-only; automatic ATA wake disabled")
+
+        val result = transport.sendAsciiCommand(
+            connection = session.connection,
+            endpointOut = session.endpointOut,
+            endpointIn = session.endpointIn,
+            commandLabel = "Manual OpenPort command",
+            commandString = normalizedCommand
+        )
+
+        val gotResponse = result.bytesReceived > 0 &&
+            (result.responseAscii.isNotEmpty() || result.responseHex.isNotEmpty())
+
+        return TactrixTestResult(
+            success = gotResponse,
+            statusMessage = if (gotResponse) {
+                "OpenPort response received"
+            } else {
+                "No response from OpenPort"
+            },
+            bytesSent = result.bytesSent,
+            bytesReceived = result.bytesReceived,
+            responseHex = result.responseHex,
+            responseAscii = result.responseAscii
+        )
     }
 
-    private fun calculateChecksum(payload: ByteArray): Byte {
-        var sum = 0
-        for (b in payload) sum = (sum + b.toInt()) and 0xFF
-        return sum.toByte()
+    @Synchronized
+    fun sendSubaruSsmCanCommand(command: String): TactrixTestResult {
+        val sessionResult = getOrOpenManualSession()
+        if (sessionResult.error != null) {
+            return sessionResult.error
+        }
+
+        val session = sessionResult.session ?: return TactrixTestResult(
+            false,
+            "Failed to open Tactrix session",
+            -1,
+            -1,
+            "",
+            ""
+        )
+
+        EcuLogger.usb("Subaru SSM CAN command requested: $command")
+
+        val at06Result = transport.sendAsciiCommand(
+            connection = session.connection,
+            endpointOut = session.endpointOut,
+            endpointIn = session.endpointIn,
+            commandLabel = "OpenPort AT06 CAN command",
+            commandString = "at06 0 500000 0\r\n"
+        )
+
+        if (at06Result.responseAscii.contains("aro", ignoreCase = true)) {
+            return TactrixTestResult(
+                false,
+                "OpenPort CAN bus open failed before Subaru SSM query",
+                at06Result.bytesSent,
+                at06Result.bytesReceived,
+                at06Result.responseHex,
+                at06Result.responseAscii
+            )
+        }
+
+        val rawResult = sendSubaruSsmQuery(
+            session = session
+        )
+
+        val gotResponse = rawResult.bytesReceived > 0 &&
+            (rawResult.responseAscii.isNotEmpty() || rawResult.responseHex.isNotEmpty())
+
+        return TactrixTestResult(
+            success = gotResponse,
+            statusMessage = if (gotResponse) {
+                "Subaru SSM CAN response received"
+            } else {
+                "No response from Subaru SSM CAN query"
+            },
+            bytesSent = rawResult.bytesSent,
+            bytesReceived = rawResult.bytesReceived,
+            responseHex = rawResult.responseHex,
+            responseAscii = rawResult.responseAscii
+        )
     }
 
-    private fun OpenPortSession.endpointOut(): UsbEndpoint {
-        // Assumes the first endpoint is OUT
-        return usbInterface.getEndpoint(0)
+    @Synchronized
+    fun sendSubaruSsmKlineCommand(command: String): TactrixTestResult {
+        val sessionResult = getOrOpenManualSession()
+        if (sessionResult.error != null) {
+            return sessionResult.error
+        }
+
+        val session = sessionResult.session ?: return TactrixTestResult(
+            false,
+            "Failed to open Tactrix session",
+            -1,
+            -1,
+            "",
+            ""
+        )
+
+        EcuLogger.usb("Subaru SSM K-line command requested: $command")
+        EcuLogger.usb("K-line session opened, but K-line init sequence is not wired yet")
+
+        return TactrixTestResult(
+            success = false,
+            statusMessage = "Subaru SSM K-line init path not implemented yet",
+            bytesSent = 0,
+            bytesReceived = 0,
+            responseHex = "",
+            responseAscii = ""
+        )
     }
 
-    private fun OpenPortSession.endpointIn(): UsbEndpoint {
-        // Assumes the second endpoint is IN
-        return usbInterface.getEndpoint(1)
+    @Synchronized
+    fun endManualSession(): Boolean {
+        val session = manualSession ?: run {
+            EcuLogger.usb("No active manual Tactrix session to close")
+            return false
+        }
+
+        sessionManager.closeSession(session)
+        manualSession = null
+        EcuLogger.usb("Persistent manual Tactrix session ended")
+        return true
+    }
+
+    @Synchronized
+    private fun getOrOpenManualSession(): SessionOpenResult {
+        val existingSession = manualSession
+        if (existingSession != null) {
+            EcuLogger.usb("Reusing persistent manual Tactrix session")
+            return SessionOpenResult(session = existingSession)
+        }
+
+        val sessionResult = sessionManager.openSession("Opening Tactrix connection for manual command")
+        if (sessionResult.error != null) {
+            return sessionResult
+        }
+
+        val session = sessionResult.session ?: return SessionOpenResult(
+            error = TactrixTestResult(
+                false,
+                "Failed to open Tactrix session",
+                -1,
+                -1,
+                "",
+                ""
+            )
+        )
+
+        manualSession = session
+        EcuLogger.usb("Persistent manual Tactrix session opened")
+        return SessionOpenResult(session = session)
+    }
+
+    private fun sendSubaruSsmQuery(
+        session: OpenPortSession
+    ): OpenPortCommandResult {
+        val canFrame = byteArrayOf(
+            0x00,
+            0x0D,
+            0x07,
+            0xE0.toByte(),
+            0xAA.toByte(),
+            0x0D,
+            0x00,
+            0x00,
+            0x00
+        )
+
+        EcuLogger.usb("Sending Subaru SSM raw CAN frame")
+        EcuLogger.usb("CAN frame hex: ${transport.toHex(canFrame)}")
+
+        return transport.sendRawPacket(
+            connection = session.connection,
+            endpointOut = session.endpointOut,
+            endpointIn = session.endpointIn,
+            packetLabel = "Packet",
+            packet = canFrame,
+            noDataMessage = "No response returned",
+            timeoutMessage = "Read timed out after raw transmit"
+        )
     }
 }
