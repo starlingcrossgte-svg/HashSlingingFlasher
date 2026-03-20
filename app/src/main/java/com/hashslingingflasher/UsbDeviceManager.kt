@@ -9,31 +9,10 @@ import android.hardware.usb.UsbManager
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
-data class SessionOpenResult(
-    val session: OpenPortSession? = null,
-    val error: TactrixTestResult? = null
-)
-
-data class OpenPortSession(
-    val device: UsbDevice,
-    val connection: UsbDeviceConnection,
-    val usbInterface: UsbInterface
-)
-
-data class TactrixTestResult(
-    val success: Boolean,
-    val statusMessage: String,
-    val bytesSent: Int = 0,
-    val bytesReceived: Int = 0,
-    val responseHex: String = "",
-    val responseAscii: String = ""
-)
-
 class UsbDeviceManager(private val context: Context) {
 
     private val lock = ReentrantLock()
 
-    // ---------------- 5-baud K-line implementation ----------------
     fun sendKlineCommand(session: OpenPortSession, payload: ByteArray): TactrixTestResult {
         lock.withLock {
             // Step 1: Send 5-baud wake
@@ -54,6 +33,7 @@ class UsbDeviceManager(private val context: Context) {
     }
 
     private fun send5BaudWake(session: OpenPortSession): TactrixTestResult {
+        // K-line wake: 0x33 sent at 5 baud
         val wakeByte = byteArrayOf(0x33.toByte())
         val sent = session.connection.bulkTransfer(
             session.endpointOut(), wakeByte, wakeByte.size, 5000
@@ -80,47 +60,13 @@ class UsbDeviceManager(private val context: Context) {
         return sum.toByte()
     }
 
-    // ---------------- Existing OpenPort / manual session functions ----------------
-    // Everything from your previous screenshots, now augmented to support K-line
-
-    @Synchronized
-    fun sendSubaruSsmKlineCommand(command: String): TactrixTestResult {
-        val sessionResult = getOrOpenManualSession()
-        if (sessionResult.error != null) return sessionResult.error
-
-        val session = sessionResult.session ?: return TactrixTestResult(
-            false, "Failed to open Tactrix session"
-        )
-
-        EcuLogger.usb("Subaru SSM K-line command requested: $command")
-        EcuLogger.usb("K-line session opened, but K-line init sequence is now supported via sendKlineCommand()")
-
-        val payload = command.toByteArray() // placeholder conversion
-        return sendKlineCommand(session, payload)
+    private fun OpenPortSession.endpointOut(): UsbEndpoint {
+        // Assumes the first endpoint is OUT
+        return usbInterface.getEndpoint(0)
     }
 
-    @Synchronized
-    fun endManualSession(): Boolean {
-        val session = manualSession ?: return false
-        EcuLogger.usb("Closing Tactrix manual session")
-        sessionManager.closeSession(session)
-        manualSession = null
-        return true
+    private fun OpenPortSession.endpointIn(): UsbEndpoint {
+        // Assumes the second endpoint is IN
+        return usbInterface.getEndpoint(1)
     }
-
-    @Synchronized
-    private fun getOrOpenManualSession(): SessionOpenResult {
-        val existing = manualSession
-        if (existing != null) return SessionOpenResult(existing)
-
-        val sessionResult = sessionManager.openSession("Opening Tactrix connection for manual command")
-        if (sessionResult.error != null) return SessionOpenResult(null, sessionResult.error)
-
-        manualSession = sessionResult.session
-        return SessionOpenResult(manualSession)
-    }
-
-    // ---- Helper OpenPortSession extensions ----
-    private fun OpenPortSession.endpointOut(): UsbEndpoint = usbInterface.getEndpoint(0)
-    private fun OpenPortSession.endpointIn(): UsbEndpoint = usbInterface.getEndpoint(1)
 }
