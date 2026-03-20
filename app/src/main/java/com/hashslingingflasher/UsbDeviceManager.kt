@@ -156,7 +156,7 @@ class UsbDeviceManager(private val context: Context) {
     }
 
     @Synchronized
-    fun sendSubaruSsmCommand(command: String): TactrixTestResult {
+    fun sendSubaruSsmCanCommand(command: String): TactrixTestResult {
         val sessionResult = getOrOpenManualSession()
         if (sessionResult.error != null) {
             return sessionResult.error
@@ -171,7 +171,7 @@ class UsbDeviceManager(private val context: Context) {
             ""
         )
 
-        EcuLogger.usb("Subaru SSM command requested: $command")
+        EcuLogger.usb("Subaru SSM CAN command requested: $command")
 
         val at06Result = transport.sendAsciiCommand(
             connection = session.connection,
@@ -202,14 +202,43 @@ class UsbDeviceManager(private val context: Context) {
         return TactrixTestResult(
             success = gotResponse,
             statusMessage = if (gotResponse) {
-                "Subaru SSM response received"
+                "Subaru SSM CAN response received"
             } else {
-                "No response from Subaru SSM query"
+                "No response from Subaru SSM CAN query"
             },
             bytesSent = rawResult.bytesSent,
             bytesReceived = rawResult.bytesReceived,
             responseHex = rawResult.responseHex,
             responseAscii = rawResult.responseAscii
+        )
+    }
+
+    @Synchronized
+    fun sendSubaruSsmKlineCommand(command: String): TactrixTestResult {
+        val sessionResult = getOrOpenManualSession()
+        if (sessionResult.error != null) {
+            return sessionResult.error
+        }
+
+        val session = sessionResult.session ?: return TactrixTestResult(
+            false,
+            "Failed to open Tactrix session",
+            -1,
+            -1,
+            "",
+            ""
+        )
+
+        EcuLogger.usb("Subaru SSM K-line command requested: $command")
+        EcuLogger.usb("K-line session opened, but K-line init sequence is not wired yet")
+
+        return TactrixTestResult(
+            success = false,
+            statusMessage = "Subaru SSM K-line init path not implemented yet",
+            bytesSent = 0,
+            bytesReceived = 0,
+            responseHex = "",
+            responseAscii = ""
         )
     }
 

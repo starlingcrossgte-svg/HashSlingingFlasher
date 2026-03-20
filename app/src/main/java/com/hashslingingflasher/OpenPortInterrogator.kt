@@ -31,7 +31,7 @@ class OpenPortInterrogator(
             normalized.startsWith("atsp") -> "Bus Mode: CAN protocol select"
             normalized.startsWith("ati") -> "Bus Mode: Adapter info"
             normalized.startsWith("atrv") -> "Bus Mode: Adapter voltage query"
-            normalized.startsWith("at") -> "Bus Mode: OpenPort adapter command"
+            normalized == "at" -> "Bus Mode: OpenPort adapter command"
             selectedMode == CommandModeHelper.MODE_SUBARU_SSM_CAN -> "Bus Mode: Subaru SSM over CAN"
             selectedMode == CommandModeHelper.MODE_SUBARU_SSM_KLINE -> "Bus Mode: Subaru SSM over K-line"
             else -> "Bus Mode: Manual OpenPort"
@@ -43,7 +43,7 @@ class OpenPortInterrogator(
             normalized.startsWith("atrv") -> "Command Family: Adapter voltage"
             normalized.startsWith("atsp") -> "Command Family: Protocol selection"
             normalized.startsWith("at06") -> "Command Family: CAN bus setup"
-            normalized.startsWith("at") -> "Command Family: OpenPort adapter command"
+            normalized == "at" -> "Command Family: OpenPort adapter command"
             else -> "Command Family: Manual payload"
         }
 
@@ -81,10 +81,7 @@ class OpenPortInterrogator(
                 statusMessage = "Raw packet mode not implemented yet"
             )
             CommandModeHelper.MODE_SUBARU_SSM_CAN -> runSubaruSsmCanCommand(command, profile)
-            CommandModeHelper.MODE_SUBARU_SSM_KLINE -> buildModeStubResult(
-                profile = profile,
-                statusMessage = "Subaru SSM K-line mode not implemented yet"
-            )
+            CommandModeHelper.MODE_SUBARU_SSM_KLINE -> runSubaruSsmKlineCommand(command, profile)
             else -> buildModeStubResult(
                 profile = profile,
                 statusMessage = "Unknown manual command mode"
@@ -116,7 +113,23 @@ class OpenPortInterrogator(
         command: String,
         profile: OpenPortCommandProfile
     ): OpenPortInterrogationResult {
-        val transportResult = usbDeviceManager.sendSubaruSsmCommand(command)
+        val transportResult = usbDeviceManager.sendSubaruSsmCanCommand(command)
+        val interpreted = responseInterpreter.interpret(transportResult)
+
+        return OpenPortInterrogationResult(
+            profile = profile,
+            transportResult = transportResult,
+            responseTypeSummary = interpreted.responseTypeSummary,
+            statusSummary = interpreted.statusSummary,
+            errorSummary = interpreted.errorSummary
+        )
+    }
+
+    private fun runSubaruSsmKlineCommand(
+        command: String,
+        profile: OpenPortCommandProfile
+    ): OpenPortInterrogationResult {
+        val transportResult = usbDeviceManager.sendSubaruSsmKlineCommand(command)
         val interpreted = responseInterpreter.interpret(transportResult)
 
         return OpenPortInterrogationResult(
