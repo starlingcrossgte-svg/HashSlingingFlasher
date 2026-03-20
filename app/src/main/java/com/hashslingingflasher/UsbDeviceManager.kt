@@ -336,11 +336,20 @@ class UsbDeviceManager(private val context: Context) {
             val probePacket = byteArrayOf(
                 0x80.toByte(),
                 0xF0.toByte(),
-                0x18.toByte(),
+                0x28.toByte(),
                 0x01.toByte(),
                 0xBF.toByte(),
-                0x48.toByte()
+                0x58.toByte()
             )
+
+            EcuLogger.usb("Waiting 125 ms after K-line init before first SSM probe")
+            Thread.sleep(125)
+            EcuLogger.usb("OpenPort K-line first SSM probe -> ${transport.toHex(probePacket)}")
+
+            val probeResult = transport.sendRawPacket(
+            Thread.sleep(110)
+            EcuLogger.usb("OpenPort K-line first SSM probe -> ${transport.toHex(probePacket)}")
+            Thread.sleep(75)
             EcuLogger.usb("OpenPort K-line first SSM probe -> ${transport.toHex(probePacket)}")
 
             val probeResult = transport.sendRawPacket(

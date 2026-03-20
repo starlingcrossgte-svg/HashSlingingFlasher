@@ -65,21 +65,52 @@ class OpenPortTransport {
         )
 
         EcuLogger.usb("Bytes sent: $sent")
-
-        val buffer = ByteArray(256)
-        val received = connection.bulkTransfer(
+        val firstBuffer = ByteArray(256)
+        val firstReceived = connection.bulkTransfer(
             endpointIn,
-            buffer,
-            buffer.size,
+            firstBuffer,
+            firstBuffer.size,
             READ_TIMEOUT_MS
         )
 
-        EcuLogger.usb("Bytes received: $received")
+        EcuLogger.usb("Bytes received: $firstReceived")
 
-        val responseBytes = if (received > 0) {
-            buffer.copyOf(received)
+        val firstResponseBytes = if (firstReceived > 0) {
+            firstBuffer.copyOf(firstReceived)
         } else {
             byteArrayOf()
+        }
+
+        val looksLikeEcho =
+            firstReceived == packet.size &&
+            firstReceived > 0 &&
+            firstResponseBytes.contentEquals(packet)
+
+        val received: Int
+        val responseBytes: ByteArray
+
+        if (looksLikeEcho) {
+            EcuLogger.usb("Echo detected; discarding first read and waiting for device reply")
+
+            val secondBuffer = ByteArray(256)
+            val secondReceived = connection.bulkTransfer(
+                endpointIn,
+                secondBuffer,
+                secondBuffer.size,
+                READ_TIMEOUT_MS
+            )
+
+            EcuLogger.usb("Bytes received after echo discard: $secondReceived")
+
+            received = secondReceived
+            responseBytes = if (secondReceived > 0) {
+                secondBuffer.copyOf(secondReceived)
+            } else {
+                byteArrayOf()
+            }
+        } else {
+            received = firstReceived
+            responseBytes = firstResponseBytes
         }
 
         val responseHex = if (received > 0) {
@@ -92,6 +123,10 @@ class OpenPortTransport {
             String(responseBytes, Charset.forName("US-ASCII"))
         } else {
             ""
+        }
+
+        if (looksLikeEcho && received <= 0) {
+            EcuLogger.usb("No device reply received after echo discard")
         }
 
         if (received > 0) {
