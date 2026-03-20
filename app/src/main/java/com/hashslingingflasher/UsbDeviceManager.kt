@@ -336,12 +336,11 @@ class UsbDeviceManager(private val context: Context) {
             val probePacket = byteArrayOf(
                 0x80.toByte(),
                 0xF0.toByte(),
-                0x10.toByte(),
+                0x18.toByte(),
                 0x01.toByte(),
                 0xBF.toByte(),
-                0x40.toByte()
+                0x48.toByte()
             )
-
             EcuLogger.usb("OpenPort K-line first SSM probe -> ${transport.toHex(probePacket)}")
 
             val probeResult = transport.sendRawPacket(
