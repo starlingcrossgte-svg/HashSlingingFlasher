@@ -339,26 +339,10 @@ class UsbDeviceManager(private val context: Context) {
         }
 
         if (normalizedCommand == "SSM_KLINE_READ") {
-            val headerResult = sendKlineAsciiCommand(
-                session = session,
-                commandLabel = "OpenPort K-line probe header",
-                commandString = "atsh8213f0\r\n"
-            )
-            if (looksLikeAdapterRejection(headerResult.responseAscii)) {
-                return TactrixTestResult(
-                    false,
-                    "OpenPort rejected K-line probe header",
-                    headerResult.bytesSent,
-                    headerResult.bytesReceived,
-                    headerResult.responseHex,
-                    headerResult.responseAscii
-                )
-            }
-
             val probeResult = sendKlineAsciiCommand(
                 session = session,
-                commandLabel = "OpenPort K-line first probe",
-                commandString = "0100\r\n"
+                commandLabel = "OpenPort K-line first SSM probe",
+                commandString = "80 10 F0 01 BF 40\r\n"
             )
 
             val gotResponse = hasNonAckResponse(probeResult)
@@ -366,23 +350,21 @@ class UsbDeviceManager(private val context: Context) {
             return TactrixTestResult(
                 success = gotResponse,
                 statusMessage = if (gotResponse) {
-                    "K-line init completed and first probe response captured"
+                    "K-line init completed and first SSM probe response captured"
                 } else {
-                    "K-line init completed, but no response to first K-line probe"
+                    "K-line init completed, but no response to first SSM probe"
                 },
                 bytesSent = baudResult.bytesSent +
                     initAddrResult.bytesSent +
                     keywordResult.bytesSent +
                     protocolResult.bytesSent +
                     slowInitResult.bytesSent +
-                    headerResult.bytesSent +
                     probeResult.bytesSent,
                 bytesReceived = baudResult.bytesReceived +
                     initAddrResult.bytesReceived +
                     keywordResult.bytesReceived +
                     protocolResult.bytesReceived +
                     slowInitResult.bytesReceived +
-                    headerResult.bytesReceived +
                     probeResult.bytesReceived,
                 responseHex = probeResult.responseHex,
                 responseAscii = probeResult.responseAscii
