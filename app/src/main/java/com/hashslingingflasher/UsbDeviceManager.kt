@@ -339,10 +339,25 @@ class UsbDeviceManager(private val context: Context) {
         }
 
         if (normalizedCommand == "SSM_KLINE_READ") {
-            val probeResult = sendKlineAsciiCommand(
-                session = session,
-                commandLabel = "OpenPort K-line first SSM probe",
-                commandString = "80 10 F0 01 BF 40\r\n"
+            val probePacket = byteArrayOf(
+                0x80.toByte(),
+                0x10.toByte(),
+                0xF0.toByte(),
+                0x01.toByte(),
+                0xBF.toByte(),
+                0x40.toByte()
+            )
+
+            EcuLogger.usb("OpenPort K-line first SSM probe -> ${transport.toHex(probePacket)}")
+
+            val probeResult = transport.sendRawPacket(
+                connection = session.connection,
+                endpointOut = session.endpointOut,
+                endpointIn = session.endpointIn,
+                packetLabel = "K-line first SSM probe",
+                packet = probePacket,
+                noDataMessage = "No data returned",
+                timeoutMessage = "Read timed out or no response from device"
             )
 
             val gotResponse = hasNonAckResponse(probeResult)
