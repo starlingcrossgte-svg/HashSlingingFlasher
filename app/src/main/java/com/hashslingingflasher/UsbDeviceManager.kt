@@ -529,7 +529,10 @@ class UsbDeviceManager(private val context: Context) {
             normalized == ">" ||
             normalized == "searching..." ||
             normalized.startsWith("ok\r") ||
-            normalized.startsWith("ok\n")
+            normalized.startsWith("ok\n") ||
+            normalized.startsWith("are ") ||
+            normalized.startsWith("ari ") ||
+            normalized.contains("main code version")
     }
 
     private fun looksLikeAdapterRejection(responseAscii: String): Boolean {
