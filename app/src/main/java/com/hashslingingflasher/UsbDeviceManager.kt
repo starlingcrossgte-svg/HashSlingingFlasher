@@ -429,11 +429,12 @@ class UsbDeviceManager(private val context: Context) {
     }
 
     @Synchronized
-    private fun getOrOpenManualSession(): SessionOpenResult {
+    private fun getOpenManualSession(): SessionOpenResult {
         val existingSession = manualSession
         if (existingSession != null) {
-            EcuLogger.usb("Reusing persistent manual Tactrix session")
-            return SessionOpenResult(session = existingSession)
+            EcuLogger.usb("Closing stale persistent manual Tactrix session before opening fresh one")
+            sessionManager.closeSession(existingSession)
+            manualSession = null
         }
 
         val sessionResult = sessionManager.openSession("Opening Tactrix connection for manual command")
