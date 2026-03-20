@@ -250,7 +250,7 @@ class UsbDeviceManager(private val context: Context) {
         val initAddrResult = sendKlineAsciiCommand(
             session = session,
             commandLabel = "OpenPort K-line slow init address",
-            commandString = "atiia 13\r\n"
+            commandString = "atiia 33\r\n"
         )
         if (looksLikeAdapterRejection(initAddrResult.responseAscii)) {
             return TactrixTestResult(
