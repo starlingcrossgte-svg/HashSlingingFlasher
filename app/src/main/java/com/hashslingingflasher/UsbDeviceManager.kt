@@ -335,8 +335,8 @@ class UsbDeviceManager(private val context: Context) {
         if (normalizedCommand == "SSM_KLINE_READ") {
             val probePacket = byteArrayOf(
                 0x80.toByte(),
-                0x10.toByte(),
                 0xF0.toByte(),
+                0x10.toByte(),
                 0x01.toByte(),
                 0xBF.toByte(),
                 0x40.toByte()
