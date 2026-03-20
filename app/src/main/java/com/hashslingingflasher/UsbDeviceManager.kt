@@ -231,21 +231,15 @@ class UsbDeviceManager(private val context: Context) {
 
         EcuLogger.usb("Subaru SSM K-line command requested: $command")
 
-        val baudResult = sendKlineAsciiCommand(
-            session = session,
-            commandLabel = "OpenPort K-line ISO baud command",
-            commandString = "atib 10\r\n"
+        val baudResult = TactrixTestResult(
+            success = true,
+            statusMessage = "Skipped K-line ISO baud command",
+            bytesSent = 0,
+            bytesReceived = 0,
+            responseHex = "",
+            responseAscii = ""
         )
-        if (looksLikeAdapterRejection(baudResult.responseAscii)) {
-            return TactrixTestResult(
-                false,
-                "OpenPort rejected K-line ISO baud command",
-                baudResult.bytesSent,
-                baudResult.bytesReceived,
-                baudResult.responseHex,
-                baudResult.responseAscii
-            )
-        }
+
 
         val initAddrResult = sendKlineAsciiCommand(
             session = session,
