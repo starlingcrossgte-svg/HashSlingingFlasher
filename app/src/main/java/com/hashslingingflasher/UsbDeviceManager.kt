@@ -347,12 +347,6 @@ class UsbDeviceManager(private val context: Context) {
             EcuLogger.usb("OpenPort K-line first SSM probe -> ${transport.toHex(probePacket)}")
 
             val probeResult = transport.sendRawPacket(
-            Thread.sleep(110)
-            EcuLogger.usb("OpenPort K-line first SSM probe -> ${transport.toHex(probePacket)}")
-            Thread.sleep(75)
-            EcuLogger.usb("OpenPort K-line first SSM probe -> ${transport.toHex(probePacket)}")
-
-            val probeResult = transport.sendRawPacket(
                 connection = session.connection,
                 endpointOut = session.endpointOut,
                 endpointIn = session.endpointIn,
