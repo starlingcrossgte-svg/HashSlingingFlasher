@@ -8,7 +8,7 @@ data class TactrixTestResult(
     val bytesSent: Int,
     val bytesReceived: Int,
     val responseHex: String,
-    val responseAscii: String = ""
+    val responseAscii: String
 )
 
 class UsbDeviceManager(private val context: Context) {
@@ -230,15 +230,195 @@ class UsbDeviceManager(private val context: Context) {
         )
 
         EcuLogger.usb("Subaru SSM K-line command requested: $command")
-        EcuLogger.usb("K-line session opened, but K-line init sequence is not wired yet")
+
+        val baudResult = sendKlineAsciiCommand(
+            session = session,
+            commandLabel = "OpenPort K-line ISO baud command",
+            commandString = "atib 96\r\n"
+        )
+        if (looksLikeAdapterRejection(baudResult.responseAscii)) {
+            return TactrixTestResult(
+                false,
+                "OpenPort rejected K-line ISO baud command",
+                baudResult.bytesSent,
+                baudResult.bytesReceived,
+                baudResult.responseHex,
+                baudResult.responseAscii
+            )
+        }
+
+        val initAddrResult = sendKlineAsciiCommand(
+            session = session,
+            commandLabel = "OpenPort K-line slow init address",
+            commandString = "atiia 13\r\n"
+        )
+        if (looksLikeAdapterRejection(initAddrResult.responseAscii)) {
+            return TactrixTestResult(
+                false,
+                "OpenPort rejected K-line slow init address",
+                initAddrResult.bytesSent,
+                initAddrResult.bytesReceived,
+                initAddrResult.responseHex,
+                initAddrResult.responseAscii
+            )
+        }
+
+        val keywordResult = sendKlineAsciiCommand(
+            session = session,
+            commandLabel = "OpenPort K-line keyword mode",
+            commandString = "atkw0\r\n"
+        )
+        if (looksLikeAdapterRejection(keywordResult.responseAscii)) {
+            return TactrixTestResult(
+                false,
+                "OpenPort rejected K-line keyword mode command",
+                keywordResult.bytesSent,
+                keywordResult.bytesReceived,
+                keywordResult.responseHex,
+                keywordResult.responseAscii
+            )
+        }
+
+        val protocolResult = sendKlineAsciiCommand(
+            session = session,
+            commandLabel = "OpenPort K-line protocol select",
+            commandString = "atsp4\r\n"
+        )
+        if (looksLikeAdapterRejection(protocolResult.responseAscii)) {
+            return TactrixTestResult(
+                false,
+                "OpenPort rejected K-line protocol selection",
+                protocolResult.bytesSent,
+                protocolResult.bytesReceived,
+                protocolResult.responseHex,
+                protocolResult.responseAscii
+            )
+        }
+
+        val slowInitResult = sendKlineAsciiCommand(
+            session = session,
+            commandLabel = "OpenPort K-line slow initiation",
+            commandString = "atsi\r\n"
+        )
+        if (looksLikeAdapterRejection(slowInitResult.responseAscii)) {
+            return TactrixTestResult(
+                false,
+                "OpenPort rejected K-line slow-init command",
+                slowInitResult.bytesSent,
+                slowInitResult.bytesReceived,
+                slowInitResult.responseHex,
+                slowInitResult.responseAscii
+            )
+        }
+
+        val normalizedCommand = command.trim().uppercase()
+
+        if (normalizedCommand == "SSM_KLINE_INIT") {
+            val gotResponse = hasNonAckResponse(slowInitResult)
+
+            return TactrixTestResult(
+                success = gotResponse,
+                statusMessage = if (gotResponse) {
+                    "K-line slow-init response captured"
+                } else {
+                    "K-line slow-init command sent; adapter acknowledged but no ECU payload captured"
+                },
+                bytesSent = baudResult.bytesSent +
+                    initAddrResult.bytesSent +
+                    keywordResult.bytesSent +
+                    protocolResult.bytesSent +
+                    slowInitResult.bytesSent,
+                bytesReceived = baudResult.bytesReceived +
+                    initAddrResult.bytesReceived +
+                    keywordResult.bytesReceived +
+                    protocolResult.bytesReceived +
+                    slowInitResult.bytesReceived,
+                responseHex = slowInitResult.responseHex,
+                responseAscii = slowInitResult.responseAscii
+            )
+        }
+
+        if (normalizedCommand == "SSM_KLINE_READ") {
+            val headerResult = sendKlineAsciiCommand(
+                session = session,
+                commandLabel = "OpenPort K-line probe header",
+                commandString = "atsh8213f0\r\n"
+            )
+            if (looksLikeAdapterRejection(headerResult.responseAscii)) {
+                return TactrixTestResult(
+                    false,
+                    "OpenPort rejected K-line probe header",
+                    headerResult.bytesSent,
+                    headerResult.bytesReceived,
+                    headerResult.responseHex,
+                    headerResult.responseAscii
+                )
+            }
+
+            val probeResult = sendKlineAsciiCommand(
+                session = session,
+                commandLabel = "OpenPort K-line first probe",
+                commandString = "0100\r\n"
+            )
+
+            val gotResponse = hasNonAckResponse(probeResult)
+
+            return TactrixTestResult(
+                success = gotResponse,
+                statusMessage = if (gotResponse) {
+                    "K-line init completed and first probe response captured"
+                } else {
+                    "K-line init completed, but no response to first K-line probe"
+                },
+                bytesSent = baudResult.bytesSent +
+                    initAddrResult.bytesSent +
+                    keywordResult.bytesSent +
+                    protocolResult.bytesSent +
+                    slowInitResult.bytesSent +
+                    headerResult.bytesSent +
+                    probeResult.bytesSent,
+                bytesReceived = baudResult.bytesReceived +
+                    initAddrResult.bytesReceived +
+                    keywordResult.bytesReceived +
+                    protocolResult.bytesReceived +
+                    slowInitResult.bytesReceived +
+                    headerResult.bytesReceived +
+                    probeResult.bytesReceived,
+                responseHex = probeResult.responseHex,
+                responseAscii = probeResult.responseAscii
+            )
+        }
+
+        val normalizedPayload = command.replace(Regex("\\s+"), "")
+        val payloadResult = sendKlineAsciiCommand(
+            session = session,
+            commandLabel = "OpenPort K-line custom payload",
+            commandString = "$normalizedPayload\r\n"
+        )
+
+        val gotPayloadResponse = hasNonAckResponse(payloadResult)
 
         return TactrixTestResult(
-            success = false,
-            statusMessage = "Subaru SSM K-line init path not implemented yet",
-            bytesSent = 0,
-            bytesReceived = 0,
-            responseHex = "",
-            responseAscii = ""
+            success = gotPayloadResponse,
+            statusMessage = if (gotPayloadResponse) {
+                "K-line init completed and custom payload response captured"
+            } else {
+                "K-line init completed, but no response to custom K-line payload"
+            },
+            bytesSent = baudResult.bytesSent +
+                initAddrResult.bytesSent +
+                keywordResult.bytesSent +
+                protocolResult.bytesSent +
+                slowInitResult.bytesSent +
+                payloadResult.bytesSent,
+            bytesReceived = baudResult.bytesReceived +
+                initAddrResult.bytesReceived +
+                keywordResult.bytesReceived +
+                protocolResult.bytesReceived +
+                slowInitResult.bytesReceived +
+                payloadResult.bytesReceived,
+            responseHex = payloadResult.responseHex,
+            responseAscii = payloadResult.responseAscii
         )
     }
 
@@ -311,5 +491,51 @@ class UsbDeviceManager(private val context: Context) {
             noDataMessage = "No response returned",
             timeoutMessage = "Read timed out after raw transmit"
         )
+    }
+
+    private fun sendKlineAsciiCommand(
+        session: OpenPortSession,
+        commandLabel: String,
+        commandString: String
+    ): OpenPortCommandResult {
+        EcuLogger.usb("$commandLabel -> ${commandString.trim()}")
+
+        return transport.sendAsciiCommand(
+            connection = session.connection,
+            endpointOut = session.endpointOut,
+            endpointIn = session.endpointIn,
+            commandLabel = commandLabel,
+            commandString = commandString
+        )
+    }
+
+    private fun hasNonAckResponse(result: OpenPortCommandResult): Boolean {
+        if (result.bytesReceived <= 0) {
+            return false
+        }
+
+        if (looksLikeAdapterRejection(result.responseAscii)) {
+            return false
+        }
+
+        return !looksLikeAdapterAcknowledgement(result.responseAscii) ||
+            result.responseHex.isNotEmpty() && result.responseAscii.trim().isEmpty()
+    }
+
+    private fun looksLikeAdapterAcknowledgement(responseAscii: String): Boolean {
+        val normalized = responseAscii.trim().lowercase()
+        return normalized == "ok" ||
+            normalized == "ok>" ||
+            normalized == ">" ||
+            normalized == "searching..." ||
+            normalized.startsWith("ok\r") ||
+            normalized.startsWith("ok\n")
+    }
+
+    private fun looksLikeAdapterRejection(responseAscii: String): Boolean {
+        val normalized = responseAscii.trim().lowercase()
+        return normalized.contains("aro") ||
+            normalized.contains("error") ||
+            normalized.contains("?")
     }
 }
