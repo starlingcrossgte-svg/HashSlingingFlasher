@@ -4,8 +4,10 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModelProvider
 import com.hashslingingflasher.sequence.SequenceStep
 
@@ -21,7 +23,22 @@ class SequenceLabActivity : ComponentActivity() {
         setContent {
             val uiState by viewModel.uiState.collectAsState()
 
-            MaterialTheme {
+            val sequenceLabColors = darkColorScheme(
+                primary = Color(0xFFFF6A00),
+                secondary = Color(0xFFFF6A00),
+                tertiary = Color(0xFFFF6A00),
+                background = Color(0xFF090A0C),
+                surface = Color(0xFF14161A),
+                onPrimary = Color.Black,
+                onSecondary = Color.Black,
+                onTertiary = Color.Black,
+                onBackground = Color(0xFFF4F4F4),
+                onSurface = Color(0xFFF4F4F4)
+            )
+
+            MaterialTheme(
+                colorScheme = sequenceLabColors
+            ) {
                 SequenceLabScreen(
                     uiState = uiState,
                     onAddPauseStep = {
