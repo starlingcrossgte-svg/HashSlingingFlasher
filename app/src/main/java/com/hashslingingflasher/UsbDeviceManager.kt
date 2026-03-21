@@ -105,6 +105,7 @@ class UsbDeviceManager(private val context: Context) {
             sessionManager.closeSession(session)
         }
     }
+
     @Synchronized
     fun sendCustomAsciiCommand(command: String): TactrixTestResult {
         val sessionResult = getOrOpenManualSession()
@@ -230,21 +231,15 @@ class UsbDeviceManager(private val context: Context) {
 
         EcuLogger.usb("Subaru SSM K-line command requested: $command")
 
-        val baudResult = sendKlineAsciiCommand(
-            session = session,
-            commandLabel = "OpenPort K-line ISO baud command",
-            commandString = "atib 48\r\n"
+        val baudResult = TactrixTestResult(
+            success = true,
+            statusMessage = "Skipped K-line ISO baud command",
+            bytesSent = 0,
+            bytesReceived = 0,
+            responseHex = "",
+            responseAscii = ""
         )
-        if (looksLikeAdapterRejection(baudResult.responseAscii)) {
-            return TactrixTestResult(
-                false,
-                "OpenPort rejected K-line ISO baud command",
-                baudResult.bytesSent,
-                baudResult.bytesReceived,
-                baudResult.responseHex,
-                baudResult.responseAscii
-            )
-        }
+
 
         val initAddrResult = sendKlineAsciiCommand(
             session = session,
@@ -434,12 +429,11 @@ class UsbDeviceManager(private val context: Context) {
     }
 
     @Synchronized
-    private fun getOpenManualSession(): SessionOpenResult {
+    private fun getOrOpenManualSession(): SessionOpenResult {
         val existingSession = manualSession
         if (existingSession != null) {
-            EcuLogger.usb("Closing stale persistent manual Tactrix session before opening fresh one")
-            sessionManager.closeSession(existingSession)
-            manualSession = null
+            EcuLogger.usb("Reusing persistent manual Tactrix session")
+            return SessionOpenResult(session = existingSession)
         }
 
         val sessionResult = sessionManager.openSession("Opening Tactrix connection for manual command")
