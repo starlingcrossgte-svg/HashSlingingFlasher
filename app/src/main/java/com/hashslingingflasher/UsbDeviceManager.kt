@@ -321,7 +321,7 @@ class UsbDeviceManager(private val context: Context) {
                 statusMessage = if (gotResponse) {
                     "K-line slow-init response captured"
                 } else {
-                    "K-line slow-init command sent; adapter acknowledged but no ECU payload captured"
+                    "K-line slow-init command sent; adapter acknowledged but no TCM payload captured"
                 },
                 bytesSent = baudResult.bytesSent +
                     initAddrResult.bytesSent +
@@ -348,8 +348,8 @@ class UsbDeviceManager(private val context: Context) {
                 0x48.toByte()
             )
 
-            EcuLogger.usb("Waiting 500 ms after K-line init before first SSM probe")
-            Thread.sleep(500)
+            EcuLogger.usb("Waiting 1000 ms after K-line init before first SSM probe")
+            Thread.sleep(1000)
             EcuLogger.usb("OpenPort K-line first SSM probe -> ${transport.toHex(probePacket)}")
 
             val probeResult = transport.sendRawPacket(
