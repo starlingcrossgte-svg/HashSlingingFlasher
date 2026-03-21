@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
@@ -36,7 +35,7 @@ fun LightningProgressBar(
     }
 
     val fillColor = when (state) {
-        LightningProgressState.IDLE -> Color(0x00000000)
+        LightningProgressState.IDLE -> Color.Transparent
         LightningProgressState.READY -> Color(0xFFF5D34F)
         LightningProgressState.RUNNING -> Color(0xFFFFE066)
         LightningProgressState.COMPLETE -> Color(0xFFFFF176)
@@ -45,7 +44,7 @@ fun LightningProgressBar(
 
     val appliedProgress = when (state) {
         LightningProgressState.IDLE -> 0f
-        LightningProgressState.READY -> 0.28f
+        LightningProgressState.READY -> 0.22f
         LightningProgressState.RUNNING -> normalizedProgress
         LightningProgressState.COMPLETE -> 1f
         LightningProgressState.FAILED -> normalizedProgress
@@ -54,20 +53,18 @@ fun LightningProgressBar(
     Canvas(
         modifier = modifier
             .fillMaxWidth()
-            .height(84.dp)
+            .height(38.dp)
     ) {
         val w = size.width
         val h = size.height
 
         val bolt = Path().apply {
-            moveTo(w * 0.08f, h * 0.62f)
-            lineTo(w * 0.34f, h * 0.62f)
-            lineTo(w * 0.28f, h * 0.25f)
-            lineTo(w * 0.70f, h * 0.25f)
-            lineTo(w * 0.48f, h * 0.02f)
-            lineTo(w * 0.92f, h * 0.02f)
-            lineTo(w * 0.56f, h * 0.98f)
-            lineTo(w * 0.62f, h * 0.68f)
+            moveTo(w * 0.05f, h * 0.58f)
+            lineTo(w * 0.36f, h * 0.58f)
+            lineTo(w * 0.27f, h * 0.94f)
+            lineTo(w * 0.71f, h * 0.42f)
+            lineTo(w * 0.44f, h * 0.42f)
+            lineTo(w * 0.53f, h * 0.08f)
             close()
         }
 
@@ -83,7 +80,7 @@ fun LightningProgressBar(
             path = bolt,
             color = outlineColor,
             style = Stroke(
-                width = size.minDimension * 0.04f,
+                width = size.minDimension * 0.08f,
                 cap = StrokeCap.Round
             )
         )

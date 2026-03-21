@@ -130,12 +130,11 @@ fun SequenceLabScreen(
         BoxWithConstraints(
             modifier = Modifier.fillMaxWidth()
         ) {
-            val stageWidth = maxWidth * 0.78f
-            val libraryWidth = maxWidth * 0.94f
+            val stageWidth = maxWidth
+            val libraryWidth = maxWidth
 
             Row(
-                modifier = Modifier.horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(14.dp)
+                modifier = Modifier.horizontalScroll(rememberScrollState())
             ) {
                 Column(
                     modifier = Modifier.width(stageWidth),
@@ -191,6 +190,8 @@ fun SequenceLabScreen(
                         )
                     }
                 }
+
+                Spacer(modifier = Modifier.width(20.dp))
 
                 CommandLibraryPanel(
                     modifier = Modifier.width(libraryWidth),
