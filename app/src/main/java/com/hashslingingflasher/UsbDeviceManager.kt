@@ -335,11 +335,11 @@ class UsbDeviceManager(private val context: Context) {
         if (normalizedCommand == "SSM_KLINE_READ") {
             val probePacket = byteArrayOf(
                 0x80.toByte(),
+                0x18.toByte(),
                 0xF0.toByte(),
-                0x28.toByte(),
                 0x01.toByte(),
                 0xBF.toByte(),
-                0x58.toByte()
+                0x48.toByte()
             )
 
             EcuLogger.usb("Waiting 125 ms after K-line init before first SSM probe")
