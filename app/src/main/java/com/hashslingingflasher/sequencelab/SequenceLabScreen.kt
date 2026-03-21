@@ -28,14 +28,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.hashslingingflasher.sequence.SequenceMode
 import com.hashslingingflasher.sequence.SequenceStep
-import com.hashslingingflasher.sequencelab.components.LightningProgressBar
-import com.hashslingingflasher.sequencelab.components.LightningProgressState
 
+private val HeaderGray = Color(0xFF5D636B)
 private val ScreenWhite = Color(0xFFF3F4F6)
 private val PanelWhite = Color(0xFFF8F8FA)
 private val SlotGray = Color(0xFFE6E8ED)
@@ -59,36 +57,26 @@ fun SequenceLabScreen(
 ) {
     val stagedSteps = uiState.currentSequence.steps.take(6)
 
-    val boltState = when {
-        uiState.runtimeContext.lastError.isNotBlank() -> LightningProgressState.FAILED
-        uiState.isRunning -> LightningProgressState.RUNNING
-        uiState.runtimeContext.initCompleted -> LightningProgressState.READY
-        else -> LightningProgressState.IDLE
-    }
-
-    val boltProgress = when {
-        uiState.runtimeContext.lastError.isNotBlank() -> 0.45f
-        uiState.isRunning -> 0.65f
-        uiState.runtimeContext.initCompleted -> 0.28f
-        else -> 0f
-    }
-
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(ScreenWhite)
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 14.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text(
-            text = "Sequence Lab",
-            style = MaterialTheme.typography.headlineLarge,
-            color = TextDark,
-            fontFamily = FontFamily.Serif,
-            fontStyle = FontStyle.Italic,
-            fontWeight = FontWeight.SemiBold
-        )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(HeaderGray)
+                .padding(horizontal = 16.dp, vertical = 18.dp)
+        ) {
+            Text(
+                text = "THE LAB",
+                color = Color.White,
+                style = MaterialTheme.typography.headlineMedium,
+                fontFamily = FontFamily.SansSerif,
+                fontWeight = FontWeight.Black
+            )
+        }
 
         Box(
             modifier = Modifier
@@ -97,108 +85,109 @@ fun SequenceLabScreen(
                 .background(BorderGray)
         )
 
-        LightningProgressBar(
-            state = boltState,
-            progress = boltProgress,
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Row(
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                .fillMaxSize()
+                .padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            TransportButton(
-                label = "SSM KLINE",
-                selected = uiState.selectedMode == SequenceMode.SSM_KLINE
-            )
-            TransportButton(
-                label = "SSM CAN",
-                selected = uiState.selectedMode == SequenceMode.SSM_CAN
-            )
-            TransportButton(
-                label = "RAW PACK.",
-                selected = uiState.selectedMode == SequenceMode.RAW_HEX
-            )
-            TransportButton(
-                label = "ASCII",
-                selected = uiState.selectedMode == SequenceMode.ADAPTER_ASCII
-            )
-        }
-
-        BoxWithConstraints(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            val stageWidth = maxWidth
-            val libraryWidth = maxWidth
-
             Row(
-                modifier = Modifier.horizontalScroll(rememberScrollState())
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Column(
-                    modifier = Modifier.width(stageWidth),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                TransportButton(
+                    label = "SSM KLINE",
+                    selected = uiState.selectedMode == SequenceMode.SSM_KLINE
+                )
+                TransportButton(
+                    label = "SSM CAN",
+                    selected = uiState.selectedMode == SequenceMode.SSM_CAN
+                )
+                TransportButton(
+                    label = "RAW PACK.",
+                    selected = uiState.selectedMode == SequenceMode.RAW_HEX
+                )
+                TransportButton(
+                    label = "ASCII",
+                    selected = uiState.selectedMode == SequenceMode.ADAPTER_ASCII
+                )
+            }
+
+            BoxWithConstraints(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                val stageWidth = maxWidth
+                val libraryWidth = maxWidth
+
+                Row(
+                    modifier = Modifier.horizontalScroll(rememberScrollState())
                 ) {
-                    repeat(6) { index ->
-                        val step = stagedSteps.getOrNull(index)
+                    Column(
+                        modifier = Modifier.width(stageWidth),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        repeat(6) { index ->
+                            val step = stagedSteps.getOrNull(index)
 
-                        SequenceSlotButton(
-                            label = slotLabel(index, step),
-                            onClick = {
-                                if (step != null) {
-                                    onRemoveStep(step.id)
+                            SequenceSlotButton(
+                                label = slotLabel(index, step),
+                                onClick = {
+                                    if (step != null) {
+                                        onRemoveStep(step.id)
+                                    }
                                 }
-                            }
-                        )
+                            )
 
-                        if (index < 5) {
-                            DelayStrip(label = "Delay / Quiet Time")
+                            if (index < 5) {
+                                DelayStrip(label = "Delay / Quiet Time")
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        Button(
+                            onClick = onRunSequence,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(52.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = ActiveBlue,
+                                contentColor = Color.White
+                            )
+                        ) {
+                            Text(
+                                text = "Run Sequence",
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            SmallUtilityButton(
+                                text = "Stop",
+                                onClick = onStopSequence
+                            )
+                            SmallUtilityButton(
+                                text = "Clear Log",
+                                onClick = onClearLog
+                            )
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(6.dp))
+                    Spacer(modifier = Modifier.width(20.dp))
 
-                    Button(
-                        onClick = onRunSequence,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(52.dp),
-                        shape = RoundedCornerShape(8.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = ActiveBlue,
-                            contentColor = Color.White
-                        )
-                    ) {
-                        Text(
-                            text = "Run Sequence",
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        SmallUtilityButton(
-                            text = "Stop",
-                            onClick = onStopSequence
-                        )
-                        SmallUtilityButton(
-                            text = "Clear Log",
-                            onClick = onClearLog
-                        )
-                    }
+                    CommandLibraryPanel(
+                        modifier = Modifier.width(libraryWidth),
+                        onAddAsciiStep = onAddAsciiStep,
+                        onAddRawStep = onAddRawStep,
+                        onAddPauseStep = onAddPauseStep
+                    )
                 }
-
-                Spacer(modifier = Modifier.width(20.dp))
-
-                CommandLibraryPanel(
-                    modifier = Modifier.width(libraryWidth),
-                    onAddAsciiStep = onAddAsciiStep,
-                    onAddRawStep = onAddRawStep,
-                    onAddPauseStep = onAddPauseStep
-                )
             }
         }
     }
