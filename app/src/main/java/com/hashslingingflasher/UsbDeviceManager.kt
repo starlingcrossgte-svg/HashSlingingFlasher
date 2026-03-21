@@ -105,7 +105,7 @@ class UsbDeviceManager(private val context: Context) {
             sessionManager.closeSession(session)
         }
     }
-
+    }
     @Synchronized
     fun sendCustomAsciiCommand(command: String): TactrixTestResult {
         val sessionResult = getOrOpenManualSession()
