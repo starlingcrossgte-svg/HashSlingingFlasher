@@ -69,7 +69,7 @@ class UsbDeviceManager(private val context: Context) {
                 endpointOut = session.endpointOut,
                 endpointIn = session.endpointIn,
                 commandLabel = "OpenPort AT06 CAN command",
-                commandString = "at06 0 500000 0\r\n"
+                commandString = "at06 0 50000 0\r\n"
             )
 
             if (at06Result.responseAscii.contains("aro", ignoreCase = true)) {
@@ -108,7 +108,7 @@ class UsbDeviceManager(private val context: Context) {
 
     @Synchronized
     fun sendCustomAsciiCommand(command: String): TactrixTestResult {
-        val sessionResult = getOrOpenManualSession()
+        val sessionResult = getOpenManualSession()
         if (sessionResult.error != null) {
             return sessionResult.error
         }
@@ -157,7 +157,7 @@ class UsbDeviceManager(private val context: Context) {
 
     @Synchronized
     fun sendSubaruSsmCanCommand(command: String): TactrixTestResult {
-        val sessionResult = getOrOpenManualSession()
+        val sessionResult = getOpenManualSession()
         if (sessionResult.error != null) {
             return sessionResult.error
         }
@@ -178,7 +178,7 @@ class UsbDeviceManager(private val context: Context) {
             endpointOut = session.endpointOut,
             endpointIn = session.endpointIn,
             commandLabel = "OpenPort AT06 CAN command",
-            commandString = "at06 0 500000 0\r\n"
+            commandString = "at06 0 50000 0\r\n"
         )
 
         if (at06Result.responseAscii.contains("aro", ignoreCase = true)) {
@@ -215,7 +215,7 @@ class UsbDeviceManager(private val context: Context) {
 
     @Synchronized
     fun sendSubaruSsmKlineCommand(command: String): TactrixTestResult {
-        val sessionResult = getOrOpenManualSession()
+        val sessionResult = getOpenManualSession()
         if (sessionResult.error != null) {
             return sessionResult.error
         }
@@ -231,20 +231,26 @@ class UsbDeviceManager(private val context: Context) {
 
         EcuLogger.usb("Subaru SSM K-line command requested: $command")
 
-        val baudResult = TactrixTestResult(
-            success = true,
-            statusMessage = "Skipped K-line ISO baud command",
-            bytesSent = 0,
-            bytesReceived = 0,
-            responseHex = "",
-            responseAscii = ""
+        val baudResult = sendKlineAsciiCommand(
+            session = session,
+            commandLabel = "OpenPort K-line ISO baud command",
+            commandString = "atib 48\r\n"
         )
-
+        if (looksLikeAdapterRejection(baudResult.responseAscii)) {
+            return TactrixTestResult(
+                false,
+                "OpenPort rejected K-line ISO baud command",
+                baudResult.bytesSent,
+                baudResult.bytesReceived,
+                baudResult.responseHex,
+                baudResult.responseAscii
+            )
+        }
 
         val initAddrResult = sendKlineAsciiCommand(
             session = session,
             commandLabel = "OpenPort K-line slow init address",
-            commandString = "atiia 33\r\n"
+            commandString = "atiia 18\r\n"
         )
         if (looksLikeAdapterRejection(initAddrResult.responseAscii)) {
             return TactrixTestResult(
@@ -308,7 +314,7 @@ class UsbDeviceManager(private val context: Context) {
         val normalizedCommand = command.trim().uppercase()
 
         if (normalizedCommand == "SSM_KLINE_INIT") {
-            val gotResponse = hasNonAckResponse(slowInitResult)
+            val gotResponse = hasNoNackResponse(slowInitResult)
 
             return TactrixTestResult(
                 success = gotResponse,
@@ -342,8 +348,8 @@ class UsbDeviceManager(private val context: Context) {
                 0x48.toByte()
             )
 
-            EcuLogger.usb("Waiting 125 ms after K-line init before first SSM probe")
-            Thread.sleep(125)
+            EcuLogger.usb("Waiting 500 ms after K-line init before first SSM probe")
+            Thread.sleep(500)
             EcuLogger.usb("OpenPort K-line first SSM probe -> ${transport.toHex(probePacket)}")
 
             val probeResult = transport.sendRawPacket(
@@ -356,7 +362,7 @@ class UsbDeviceManager(private val context: Context) {
                 timeoutMessage = "Read timed out or no response from device"
             )
 
-            val gotResponse = hasNonAckResponse(probeResult)
+            val gotResponse = hasNoNackResponse(probeResult)
 
             return TactrixTestResult(
                 success = gotResponse,
@@ -389,7 +395,7 @@ class UsbDeviceManager(private val context: Context) {
             commandString = "$normalizedPayload\r\n"
         )
 
-        val gotPayloadResponse = hasNonAckResponse(payloadResult)
+        val gotPayloadResponse = hasNoNackResponse(payloadResult)
 
         return TactrixTestResult(
             success = gotPayloadResponse,
@@ -429,7 +435,7 @@ class UsbDeviceManager(private val context: Context) {
     }
 
     @Synchronized
-    private fun getOrOpenManualSession(): SessionOpenResult {
+    private fun getOpenManualSession(): SessionOpenResult {
         val existingSession = manualSession
         if (existingSession != null) {
             EcuLogger.usb("Reusing persistent manual Tactrix session")
@@ -502,7 +508,7 @@ class UsbDeviceManager(private val context: Context) {
         )
     }
 
-    private fun hasNonAckResponse(result: OpenPortCommandResult): Boolean {
+    private fun hasNoNackResponse(result: OpenPortCommandResult): Boolean {
         if (result.bytesReceived <= 0) {
             return false
         }
@@ -523,7 +529,7 @@ class UsbDeviceManager(private val context: Context) {
             normalized == "searching..." ||
             normalized.startsWith("ok\r") ||
             normalized.startsWith("ok\n") ||
-            normalized.startsWith("are ") ||
+            normalized.startsWith("are") ||
             normalized.startsWith("ari ") ||
             normalized.contains("main code version")
     }
