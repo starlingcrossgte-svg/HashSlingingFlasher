@@ -311,10 +311,26 @@ class UsbDeviceManager(private val context: Context) {
             )
         }
 
+        val dataShiftResult = sendKlineAsciiCommand(
+            session = session,
+            commandLabel = "OpenPort K-line ISO baud command",
+            commandString = "atib 10\r\n"
+        )
+        if (looksLikeAdapterRejection(dataShiftResult.responseAscii)) {
+            return TactrixTestResult(
+                false,
+                "OpenPort rejected post-init K-line ISO baud command",
+                dataShiftResult.bytesSent,
+                dataShiftResult.bytesReceived,
+                dataShiftResult.responseHex,
+                dataShiftResult.responseAscii
+            )
+        }
+
         val normalizedCommand = command.trim().uppercase()
 
         if (normalizedCommand == "SSM_KLINE_INIT") {
-            val gotResponse = hasNoNackResponse(slowInitResult)
+            val gotResponse = hasNoNackResponse(slowInitResult) || hasNoNackResponse(dataShiftResult)
 
             return TactrixTestResult(
                 success = gotResponse,
@@ -327,14 +343,24 @@ class UsbDeviceManager(private val context: Context) {
                     initAddrResult.bytesSent +
                     keywordResult.bytesSent +
                     protocolResult.bytesSent +
-                    slowInitResult.bytesSent,
+                    slowInitResult.bytesSent +
+                    dataShiftResult.bytesSent,
                 bytesReceived = baudResult.bytesReceived +
                     initAddrResult.bytesReceived +
                     keywordResult.bytesReceived +
                     protocolResult.bytesReceived +
-                    slowInitResult.bytesReceived,
-                responseHex = slowInitResult.responseHex,
-                responseAscii = slowInitResult.responseAscii
+                    slowInitResult.bytesReceived +
+                    dataShiftResult.bytesReceived,
+                responseHex = if (dataShiftResult.responseHex.isNotEmpty()) {
+                    dataShiftResult.responseHex
+                } else {
+                    slowInitResult.responseHex
+                },
+                responseAscii = if (dataShiftResult.responseAscii.isNotEmpty()) {
+                    dataShiftResult.responseAscii
+                } else {
+                    slowInitResult.responseAscii
+                }
             )
         }
 
@@ -348,8 +374,8 @@ class UsbDeviceManager(private val context: Context) {
                 0x48.toByte()
             )
 
-            EcuLogger.usb("Waiting 1000 ms after K-line init before first SSM probe")
-            Thread.sleep(1000)
+            EcuLogger.usb("Waiting 200 ms after post-init baud shift before first SSM probe")
+            Thread.sleep(200)
             EcuLogger.usb("OpenPort K-line first SSM probe -> ${transport.toHex(probePacket)}")
 
             val probeResult = transport.sendRawPacket(
@@ -376,12 +402,14 @@ class UsbDeviceManager(private val context: Context) {
                     keywordResult.bytesSent +
                     protocolResult.bytesSent +
                     slowInitResult.bytesSent +
+                    dataShiftResult.bytesSent +
                     probeResult.bytesSent,
                 bytesReceived = baudResult.bytesReceived +
                     initAddrResult.bytesReceived +
                     keywordResult.bytesReceived +
                     protocolResult.bytesReceived +
                     slowInitResult.bytesReceived +
+                    dataShiftResult.bytesReceived +
                     probeResult.bytesReceived,
                 responseHex = probeResult.responseHex,
                 responseAscii = probeResult.responseAscii
@@ -409,12 +437,14 @@ class UsbDeviceManager(private val context: Context) {
                 keywordResult.bytesSent +
                 protocolResult.bytesSent +
                 slowInitResult.bytesSent +
+                dataShiftResult.bytesSent +
                 payloadResult.bytesSent,
             bytesReceived = baudResult.bytesReceived +
                 initAddrResult.bytesReceived +
                 keywordResult.bytesReceived +
                 protocolResult.bytesReceived +
                 slowInitResult.bytesReceived +
+                dataShiftResult.bytesReceived +
                 payloadResult.bytesReceived,
             responseHex = payloadResult.responseHex,
             responseAscii = payloadResult.responseAscii
