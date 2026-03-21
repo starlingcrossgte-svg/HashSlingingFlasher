@@ -8,12 +8,14 @@ import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
 import android.os.Build
 import android.os.Bundle
+import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.hashslingingflasher.sequencelab.SequenceLabActivity
 import kotlin.concurrent.thread
 
 class MainActivity : AppCompatActivity() {
@@ -184,6 +186,10 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
         openPortInterrogator.endManualSession()
         unregisterReceiverSafely()
+    }
+
+    fun openSequenceLab(view: View) {
+        startActivity(Intent(this, SequenceLabActivity::class.java))
     }
 
     private fun bindViews() {

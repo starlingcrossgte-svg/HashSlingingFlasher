@@ -97,7 +97,7 @@
                 android:id="@+id/bytesSentText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Bytes Sent: -"
+                android:text="Bytes Sent: -1"
                 android:textSize="15sp"
                 android:textColor="#222222"
                 android:layout_marginBottom="8dp" />
@@ -106,13 +106,13 @@
                 android:id="@+id/bytesReceivedText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Bytes Received: -"
+                android:text="Bytes Received: -1"
                 android:textSize="15sp"
                 android:textColor="#222222"
                 android:layout_marginBottom="8dp" />
 
             <TextView
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Response Hex"
                 android:textSize="14sp"
@@ -266,6 +266,14 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="END SESSION"
+                android:layout_marginBottom="12dp" />
+
+            <Button
+                android:id="@+id/openSequenceLabButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:onClick="openSequenceLab"
+                android:text="OPEN SEQUENCE LAB"
                 android:layout_marginBottom="16dp" />
 
             <TextView
