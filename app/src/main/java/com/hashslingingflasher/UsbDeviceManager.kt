@@ -282,7 +282,7 @@ class UsbDeviceManager(private val context: Context) {
         val protocolResult = sendKlineAsciiCommand(
             session = session,
             commandLabel = "OpenPort K-line protocol select",
-            commandString = "atsp3\r\n"
+            commandString = "atsp4\r\n"
         )
         if (looksLikeAdapterRejection(protocolResult.responseAscii)) {
             return TactrixTestResult(
