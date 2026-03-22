@@ -1,5 +1,4 @@
 package com.hashslingingflasher.sequencelab
-
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
@@ -16,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -31,6 +31,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.hashslingingflasher.sequence.SequenceMode
+import com.hashslingingflasher.sequence.SequenceStep
 import com.hashslingingflasher.sequence.SequenceStep
 
 private val HeaderGray = Color(0xFF5D636B)
@@ -128,6 +129,38 @@ fun SequenceLabScreen(
                         modifier = Modifier.width(stageWidth),
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
+                        val latestResult = uiState.runLog.lastOrNull()
+                        val transportModeText = uiState.runtimeContext.mode.name.replace('_', ' ')
+                        val currentBaudText = uiState.runtimeContext.currentBaud?.toString() ?: "-"
+                        val targetIdText = uiState.runtimeContext.extractedValues["targetId"] ?: "-"
+                        val initStatusText = if (uiState.runtimeContext.initCompleted) "Complete" else "Not initialized"
+                        val lastStepText = uiState.runtimeContext.lastStepId ?: "-"
+                        val lastResultText = when {
+                            latestResult == null -> "-"
+                            latestResult.success -> "PASS"
+                            else -> "FAIL"
+                        }
+                        val lastDurationText = latestResult?.durationMs?.toString()?.plus(" ms") ?: "-"
+                        val logText = if (uiState.runLog.isEmpty()) {
+                            ""
+                        } else {
+                            uiState.runLog.joinToString("\n\n") { result ->
+                                buildString {
+                                    append(if (result.success) "[PASS] " else "[FAIL] ")
+                                    append(result.stepId)
+                                    append("\nHEX: ")
+                                    append(result.responseHex.ifBlank { "-" })
+                                    append("\nASCII: ")
+                                    append(result.responseAscii.ifBlank { "-" })
+                                    append("\nERROR: ")
+                                    append(result.errorMessage.ifBlank { "-" })
+                                    append("\nTIME: ")
+                                    append(result.durationMs)
+                                    append(" ms")
+                                }
+                            }
+                        }
+
                         repeat(6) { index ->
                             val step = stagedSteps.getOrNull(index)
 
@@ -176,6 +209,40 @@ fun SequenceLabScreen(
                                 text = "Clear Log",
                                 onClick = onClearLog
                             )
+                        }
+
+                        DetailGridCard(
+                            title = "Session Summary",
+                            leftEntries = listOf(
+                                "Active adapter" to "OBDLink EX / MX+",
+                                "Target ID" to targetIdText,
+                                "Session state" to uiState.statusMessage
+                            ),
+                            rightEntries = listOf(
+                                "Transport mode" to transportModeText,
+                                "Current baud" to currentBaudText,
+                                "Init status" to initStatusText
+                            )
+                        )
+
+                        DetailGridCard(
+                            title = "Communication Details",
+                            leftEntries = listOf(
+                                "Last response hex" to uiState.runtimeContext.lastResponseHex.ifBlank { "-" },
+                                "Last response ascii" to uiState.runtimeContext.lastResponseAscii.ifBlank { "-" },
+                                "Last error" to uiState.runtimeContext.lastError.ifBlank { "-" }
+                            ),
+                            rightEntries = listOf(
+                                "Last step" to lastStepText,
+                                "Last result" to lastResultText,
+                                "Last duration" to lastDurationText
+                            )
+                        )
+
+                        FixedLogConsoleCard(
+                            title = "Logging Console",
+                            logText = logText
+                        )
                         }
                     }
 
@@ -440,6 +507,131 @@ private fun SmallUtilityButton(
             fontWeight = FontWeight.Bold
         )
     }
+
+@Composable
+private fun DetailGridCard(
+    title: String,
+    leftEntries: List<Pair<String, String>>,
+    rightEntries: List<Pair<String, String>>
+) {
+    Card(
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(containerColor = PanelWhite),
+        border = BorderStroke(1.dp, BorderGray)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text(
+                text = title,
+                color = TextDark,
+                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.titleMedium
+            )
+
+            BoxWithConstraints(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                val columnWidth = (maxWidth - 10.dp) / 2
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.width(columnWidth),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        leftEntries.forEach { entry ->
+                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Text(
+                                    text = entry.first,
+                                    color = TextMuted,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                                Text(
+                                    text = entry.second.ifBlank { "-" },
+                                    color = TextDark,
+                                    fontWeight = FontWeight.SemiBold,
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                        }
+                    }
+
+                    Column(
+                        modifier = Modifier.width(columnWidth),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        rightEntries.forEach { entry ->
+                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Text(
+                                    text = entry.first,
+                                    color = TextMuted,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                                Text(
+                                    text = entry.second.ifBlank { "-" },
+                                    color = TextDark,
+                                    fontWeight = FontWeight.SemiBold,
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FixedLogConsoleCard(
+    title: String,
+    logText: String
+) {
+    Card(
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(containerColor = PanelWhite),
+        border = BorderStroke(1.dp, BorderGray)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text(
+                text = title,
+                color = TextDark,
+                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.titleMedium
+            )
+
+            Card(
+                shape = RoundedCornerShape(8.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF101215))
+            ) {
+                SelectionContainer {
+                    Text(
+                        text = if (logText.isBlank()) "No log entries yet." else logText,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(180.dp)
+                            .verticalScroll(rememberScrollState())
+                            .padding(12.dp),
+                        color = Color(0xFFE8EAED),
+                        fontFamily = FontFamily.Monospace,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+        }
+    }
+}
 }
 
 private fun slotLabel(
