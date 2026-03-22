@@ -1,4 +1,25 @@
 <resources>
     <color name="black">#000000</color>
     <color name="white">#FFFFFF</color>
+
+    <color name="dash_bg">#111417</color>
+    <color name="dash_bg_alt">#1C2126</color>
+    <color name="dash_bg_sheen">#2A3138</color>
+
+    <color name="dash_panel">#2A2F35</color>
+    <color name="dash_panel_dark">#1B1F24</color>
+    <color name="dash_panel_smoke">#CC2A2F35</color>
+    <color name="dash_panel_outline">#5A6672</color>
+
+    <color name="dash_text_primary">#F3F5F7</color>
+    <color name="dash_text_secondary">#A8B0B8</color>
+    <color name="dash_text_dark">#111111</color>
+
+    <color name="dash_orange">#F58A1F</color>
+    <color name="dash_orange_bright">#FF9F2F</color>
+    <color name="dash_orange_deep">#D96A00</color>
+    <color name="dash_orange_outline">#E57C17</color>
+
+    <color name="dash_alert">#FFB020</color>
+    <color name="dash_red">#D64545</color>
 </resources>
