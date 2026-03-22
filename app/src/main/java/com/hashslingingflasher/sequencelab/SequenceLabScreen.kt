@@ -257,6 +257,7 @@ fun SequenceLabScreen(
         }
     }
 
+}
 @Composable
 private fun TransportButton(
     label: String,
