@@ -197,23 +197,23 @@ fun SequenceLabScreen(
                         )
                     }
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-        SmallUtilityButton(
-            text = "Discover USB",
-            onClick = onDiscoverUsb
-        )
-        SmallUtilityButton(
-            text = "Stop",
-            onClick = onStopSequence
-        )
-                        )
-                        SmallUtilityButton(
-                            text = "Clear Log",
-                            onClick = onClearLog
-                        )
-                    }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            SmallUtilityButton(
+                text = "Discover USB",
+                onClick = onDiscoverUsb
+            )
+            SmallUtilityButton(
+                text = "Stop",
+                onClick = onStopSequence
+            )
+            SmallUtilityButton(
+                text = "Clear Log",
+                onClick = onClearLog
+            )
+        }
 
                     DetailGridCard(
                         title = "Session Summary",
