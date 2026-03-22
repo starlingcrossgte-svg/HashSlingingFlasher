@@ -631,7 +631,6 @@ private fun FixedLogConsoleCard(
         }
     }
 }
-}
 
 private fun slotLabel(
     index: Int,
