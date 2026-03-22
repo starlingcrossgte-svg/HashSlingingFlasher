@@ -50,6 +50,7 @@ fun SequenceLabScreen(
     onAddAsciiStep: () -> Unit,
     onAddRawStep: () -> Unit,
     onRemoveStep: (String) -> Unit,
+    onDiscoverUsb: () -> Unit,
     onRunSequence: () -> Unit,
     onStopSequence: () -> Unit,
     onClearLog: () -> Unit,
@@ -199,10 +200,14 @@ fun SequenceLabScreen(
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        SmallUtilityButton(
-                            text = "Stop",
-                            onClick = onStopSequence
+        SmallUtilityButton(
+            text = "Discover USB",
+            onClick = onDiscoverUsb
+        )
+        SmallUtilityButton(
+            text = "Stop",
+            onClick = onStopSequence
+        )
                         )
                         SmallUtilityButton(
                             text = "Clear Log",
