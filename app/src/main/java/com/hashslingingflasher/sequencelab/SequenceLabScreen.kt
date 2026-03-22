@@ -32,7 +32,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.hashslingingflasher.sequence.SequenceMode
 import com.hashslingingflasher.sequence.SequenceStep
-import com.hashslingingflasher.sequence.SequenceStep
 
 private val HeaderGray = Color(0xFF5D636B)
 private val ScreenWhite = Color(0xFFF3F4F6)
@@ -506,6 +505,7 @@ private fun SmallUtilityButton(
             fontWeight = FontWeight.Bold
         )
     }
+}
 
 @Composable
 private fun DetailGridCard(
