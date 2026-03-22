@@ -121,139 +121,138 @@ fun SequenceLabScreen(
                 val stageWidth = maxWidth
                 val libraryWidth = maxWidth
 
-                Row(
-                    modifier = Modifier.horizontalScroll(rememberScrollState())
+            Row(
+                modifier = Modifier.horizontalScroll(rememberScrollState())
+            ) {
+                Column(
+                    modifier = Modifier.width(stageWidth),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Column(
-                        modifier = Modifier.width(stageWidth),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        val latestResult = uiState.runLog.lastOrNull()
-                        val transportModeText = uiState.runtimeContext.mode.name.replace('_', ' ')
-                        val currentBaudText = uiState.runtimeContext.currentBaud?.toString() ?: "-"
-                        val targetIdText = uiState.runtimeContext.extractedValues["targetId"] ?: "-"
-                        val initStatusText = if (uiState.runtimeContext.initCompleted) "Complete" else "Not initialized"
-                        val lastStepText = uiState.runtimeContext.lastStepId ?: "-"
-                        val lastResultText = when {
-                            latestResult == null -> "-"
-                            latestResult.success -> "PASS"
-                            else -> "FAIL"
-                        }
-                        val lastDurationText = latestResult?.durationMs?.toString()?.plus(" ms") ?: "-"
-                        val logText = if (uiState.runLog.isEmpty()) {
-                            ""
-                        } else {
-                            uiState.runLog.joinToString("\n\n") { result ->
-                                buildString {
-                                    append(if (result.success) "[PASS] " else "[FAIL] ")
-                                    append(result.stepId)
-                                    append("\nHEX: ")
-                                    append(result.responseHex.ifBlank { "-" })
-                                    append("\nASCII: ")
-                                    append(result.responseAscii.ifBlank { "-" })
-                                    append("\nERROR: ")
-                                    append(result.errorMessage.ifBlank { "-" })
-                                    append("\nTIME: ")
-                                    append(result.durationMs)
-                                    append(" ms")
-                                }
+                    val latestResult = uiState.runLog.lastOrNull()
+                    val transportModeText = uiState.runtimeContext.mode.name.replace('_', ' ')
+                    val currentBaudText = uiState.runtimeContext.currentBaud?.toString() ?: "-"
+                    val targetIdText = uiState.runtimeContext.extractedValues["targetId"] ?: "-"
+                    val initStatusText = if (uiState.runtimeContext.initCompleted) "Complete" else "Not initialized"
+                    val lastStepText = uiState.runtimeContext.lastStepId ?: "-"
+                    val lastResultText = when {
+                        latestResult == null -> "-"
+                        latestResult.success -> "PASS"
+                        else -> "FAIL"
+                    }
+                    val lastDurationText = latestResult?.durationMs?.toString()?.plus(" ms") ?: "-"
+                    val logText = if (uiState.runLog.isEmpty()) {
+                        ""
+                    } else {
+                        uiState.runLog.joinToString("\n\n") { result ->
+                            buildString {
+                                append(if (result.success) "[PASS] " else "[FAIL] ")
+                                append(result.stepId)
+                                append("\nHEX: ")
+                                append(result.responseHex.ifBlank { "-" })
+                                append("\nASCII: ")
+                                append(result.responseAscii.ifBlank { "-" })
+                                append("\nERROR: ")
+                                append(result.errorMessage.ifBlank { "-" })
+                                append("\nTIME: ")
+                                append(result.durationMs)
+                                append(" ms")
                             }
-                        }
-
-                        repeat(6) { index ->
-                            val step = stagedSteps.getOrNull(index)
-
-                            SequenceSlotButton(
-                                label = slotLabel(index, step),
-                                onClick = {
-                                    if (step != null) {
-                                        onRemoveStep(step.id)
-                                    }
-                                }
-                            )
-
-                            if (index < 5) {
-                                DelayStrip(label = "Delay / Quiet Time")
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(6.dp))
-
-                        Button(
-                            onClick = onRunSequence,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(52.dp),
-                            shape = RoundedCornerShape(8.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = ActiveBlue,
-                                contentColor = Color.White
-                            )
-                        ) {
-                            Text(
-                                text = "Run Sequence",
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            SmallUtilityButton(
-                                text = "Stop",
-                                onClick = onStopSequence
-                            )
-                            SmallUtilityButton(
-                                text = "Clear Log",
-                                onClick = onClearLog
-                            )
-                        }
-
-                        DetailGridCard(
-                            title = "Session Summary",
-                            leftEntries = listOf(
-                                "Active adapter" to "OBDLink EX / MX+",
-                                "Target ID" to targetIdText,
-                                "Session state" to uiState.statusMessage
-                            ),
-                            rightEntries = listOf(
-                                "Transport mode" to transportModeText,
-                                "Current baud" to currentBaudText,
-                                "Init status" to initStatusText
-                            )
-                        )
-
-                        DetailGridCard(
-                            title = "Communication Details",
-                            leftEntries = listOf(
-                                "Last response hex" to uiState.runtimeContext.lastResponseHex.ifBlank { "-" },
-                                "Last response ascii" to uiState.runtimeContext.lastResponseAscii.ifBlank { "-" },
-                                "Last error" to uiState.runtimeContext.lastError.ifBlank { "-" }
-                            ),
-                            rightEntries = listOf(
-                                "Last step" to lastStepText,
-                                "Last result" to lastResultText,
-                                "Last duration" to lastDurationText
-                            )
-                        )
-
-                        FixedLogConsoleCard(
-                            title = "Logging Console",
-                            logText = logText
-                        )
                         }
                     }
 
-                    Spacer(modifier = Modifier.width(20.dp))
+                    repeat(6) { index ->
+                        val step = stagedSteps.getOrNull(index)
 
-                    CommandLibraryPanel(
-                        modifier = Modifier.width(libraryWidth),
-                        onAddAsciiStep = onAddAsciiStep,
-                        onAddRawStep = onAddRawStep,
-                        onAddPauseStep = onAddPauseStep
+                        SequenceSlotButton(
+                            label = slotLabel(index, step),
+                            onClick = {
+                                if (step != null) {
+                                    onRemoveStep(step.id)
+                                }
+                            }
+                        )
+
+                        if (index < 5) {
+                            DelayStrip(label = "Delay / Quiet Time")
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Button(
+                        onClick = onRunSequence,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = ActiveBlue,
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Text(
+                            text = "Run Sequence",
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        SmallUtilityButton(
+                            text = "Stop",
+                            onClick = onStopSequence
+                        )
+                        SmallUtilityButton(
+                            text = "Clear Log",
+                            onClick = onClearLog
+                        )
+                    }
+
+                    DetailGridCard(
+                        title = "Session Summary",
+                        leftEntries = listOf(
+                            "Active adapter" to "OBDLink EX / MX+",
+                            "Target ID" to targetIdText,
+                            "Session state" to uiState.statusMessage
+                        ),
+                        rightEntries = listOf(
+                            "Transport mode" to transportModeText,
+                            "Current baud" to currentBaudText,
+                            "Init status" to initStatusText
+                        )
+                    )
+
+                    DetailGridCard(
+                        title = "Communication Details",
+                        leftEntries = listOf(
+                            "Last response hex" to uiState.runtimeContext.lastResponseHex.ifBlank { "-" },
+                            "Last response ascii" to uiState.runtimeContext.lastResponseAscii.ifBlank { "-" },
+                            "Last error" to uiState.runtimeContext.lastError.ifBlank { "-" }
+                        ),
+                        rightEntries = listOf(
+                            "Last step" to lastStepText,
+                            "Last result" to lastResultText,
+                            "Last duration" to lastDurationText
+                        )
+                    )
+
+                    FixedLogConsoleCard(
+                        title = "Logging Console",
+                        logText = logText
                     )
                 }
+
+                Spacer(modifier = Modifier.width(20.dp))
+
+                CommandLibraryPanel(
+                    modifier = Modifier.width(libraryWidth),
+                    onAddAsciiStep = onAddAsciiStep,
+                    onAddRawStep = onAddRawStep,
+                    onAddPauseStep = onAddPauseStep
+                )
+            }
             }
         }
     }
