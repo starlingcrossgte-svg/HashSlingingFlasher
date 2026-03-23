@@ -2,7 +2,24 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#000000">
+    android:background="@android:color/white">
+
+    <Button
+        android:id="@+id/openSequenceLabButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:minWidth="220dp"
+        android:minHeight="56dp"
+        android:paddingLeft="24dp"
+        android:paddingTop="14dp"
+        android:paddingRight="24dp"
+        android:paddingBottom="14dp"
+        android:text="OPEN SEQUENCE LAB"
+        android:textAllCaps="true"
+        android:textColor="@android:color/black"
+        android:textSize="18sp"
+        android:textStyle="bold" />
 
     <LinearLayout
         android:layout_width="0dp"
@@ -14,92 +31,79 @@
             android:id="@+id/appTitleText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text=""
-            android:textColor="@android:color/white" />
+            android:text="" />
 
         <TextView
             android:id="@+id/statusMessageText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text=""
-            android:textColor="@android:color/white" />
+            android:text="" />
 
         <TextView
             android:id="@+id/deviceStateText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text=""
-            android:textColor="@android:color/white" />
+            android:text="" />
 
         <TextView
             android:id="@+id/permissionStateText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text=""
-            android:textColor="@android:color/white" />
+            android:text="" />
 
         <TextView
             android:id="@+id/lastCommandText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text=""
-            android:textColor="@android:color/white" />
+            android:text="" />
 
         <TextView
             android:id="@+id/bytesSentText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text=""
-            android:textColor="@android:color/white" />
+            android:text="" />
 
         <TextView
             android:id="@+id/bytesReceivedText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text=""
-            android:textColor="@android:color/white" />
+            android:text="" />
 
         <TextView
             android:id="@+id/responseHexText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text=""
-            android:textColor="@android:color/white" />
+            android:text="" />
 
         <TextView
             android:id="@+id/summaryOpenPortCommandText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text=""
-            android:textColor="@android:color/white" />
+            android:text="" />
 
         <TextView
             android:id="@+id/summaryBusModeText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text=""
-            android:textColor="@android:color/white" />
+            android:text="" />
 
         <TextView
             android:id="@+id/summaryEcuQueryText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text=""
-            android:textColor="@android:color/white" />
+            android:text="" />
 
         <TextView
             android:id="@+id/summaryResponseTypeText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text=""
-            android:textColor="@android:color/white" />
+            android:text="" />
 
         <TextView
             android:id="@+id/summaryErrorText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text=""
-            android:textColor="@android:color/white" />
+            android:text="" />
 
         <Spinner
             android:id="@+id/commandModeSpinner"
@@ -115,9 +119,7 @@
             android:id="@+id/manualCommandInput"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text=""
-            android:textColor="@android:color/white"
-            android:textColorHint="@android:color/darker_gray" />
+            android:text="" />
 
         <Button
             android:id="@+id/sendManualCommandButton"
@@ -135,24 +137,16 @@
             android:id="@+id/manualCommandResponseText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text=""
-            android:textColor="@android:color/white" />
+            android:text="" />
 
         <TextView
             android:id="@+id/developerLogText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text=""
-            android:textColor="@android:color/white" />
-
-        <Button
-            android:id="@+id/clearLogsButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
             android:text="" />
 
         <Button
-            android:id="@+id/openSequenceLabButton"
+            android:id="@+id/clearLogsButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="" />
