@@ -22,7 +22,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.hashslingingflasher.sequence.SequenceMode
@@ -34,8 +33,8 @@ import com.hashslingingflasher.sequencelab.components.DetailGridCard
 import com.hashslingingflasher.sequencelab.components.TransportButton
 import com.hashslingingflasher.sequencelab.components.SequenceSlotButton
 import com.hashslingingflasher.sequencelab.components.DelayStrip
+import com.hashslingingflasher.sequencelab.components.SequenceLabHeader
 
-private val HeaderGray = Color(0xFF5D636B)
 private val ScreenWhite = Color(0xFFF3F4F6)
 private val BorderGray = Color(0xFFD4D7DE)
 private val ActiveBlue = Color(0xFF2F6FE4)
@@ -61,20 +60,7 @@ fun SequenceLabScreen(
             .background(ScreenWhite)
             .verticalScroll(rememberScrollState())
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(HeaderGray)
-                .padding(horizontal = 16.dp, vertical = 18.dp)
-        ) {
-            Text(
-                text = "THE LAB",
-                color = Color.White,
-                style = MaterialTheme.typography.headlineMedium,
-                fontFamily = FontFamily.SansSerif,
-                fontWeight = FontWeight.Black
-            )
-        }
+        SequenceLabHeader()
 
         Box(
             modifier = Modifier
