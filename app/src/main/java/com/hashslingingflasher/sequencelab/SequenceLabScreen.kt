@@ -242,7 +242,6 @@ fun SequenceLabScreen(
                     onAddRawStep = onAddRawStep,
                     onAddPauseStep = onAddPauseStep
                 )
-                )
             }
             }
         }
