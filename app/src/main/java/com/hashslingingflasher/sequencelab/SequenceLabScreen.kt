@@ -1,5 +1,4 @@
 package com.hashslingingflasher.sequencelab
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -15,14 +14,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -32,16 +27,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.hashslingingflasher.sequence.SequenceMode
 import com.hashslingingflasher.sequence.SequenceStep
+import com.hashslingingflasher.sequencelab.components.SequenceCommandLibraryPanel
+import com.hashslingingflasher.sequencelab.components.FixedLogConsoleCard
+import com.hashslingingflasher.sequencelab.components.SmallUtilityButton
+import com.hashslingingflasher.sequencelab.components.DetailGridCard
+import com.hashslingingflasher.sequencelab.components.TransportButton
+import com.hashslingingflasher.sequencelab.components.SequenceSlotButton
+import com.hashslingingflasher.sequencelab.components.DelayStrip
 
 private val HeaderGray = Color(0xFF5D636B)
 private val ScreenWhite = Color(0xFFF3F4F6)
-private val PanelWhite = Color(0xFFF8F8FA)
-private val SlotGray = Color(0xFFE6E8ED)
 private val BorderGray = Color(0xFFD4D7DE)
 private val ActiveBlue = Color(0xFF2F6FE4)
-private val InactiveGray = Color(0xFFD8DCE3)
-private val TextDark = Color(0xFF171A20)
-private val TextMuted = Color(0xFF6B7280)
 
 @Composable
 fun SequenceLabScreen(
@@ -251,7 +248,7 @@ fun SequenceLabScreen(
 
                 Spacer(modifier = Modifier.width(20.dp))
 
-                CommandLibraryPanel(
+                SequenceCommandLibraryPanel(
                     modifier = Modifier.width(libraryWidth),
                     onAddAsciiStep = onAddAsciiStep,
                     onAddRawStep = onAddRawStep,
@@ -263,379 +260,7 @@ fun SequenceLabScreen(
     }
 
 }
-@Composable
-private fun TransportButton(
-    label: String,
-    selected: Boolean
-) {
-    Button(
-        onClick = { },
-        shape = RoundedCornerShape(18.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = if (selected) ActiveBlue else InactiveGray,
-            contentColor = if (selected) Color.White else TextMuted
-        )
-    ) {
-        Text(
-            text = label,
-            fontWeight = FontWeight.Bold
-        )
-    }
-}
 
-@Composable
-private fun SequenceSlotButton(
-    label: String,
-    onClick: () -> Unit
-) {
-    Button(
-        onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(44.dp),
-        shape = RoundedCornerShape(8.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = SlotGray,
-            contentColor = TextDark
-        )
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                text = label,
-                fontWeight = FontWeight.SemiBold
-            )
-            Text(
-                text = "›",
-                color = TextMuted,
-                fontWeight = FontWeight.Bold
-            )
-        }
-    }
-}
-
-@Composable
-private fun DelayStrip(
-    label: String
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(containerColor = PanelWhite),
-        border = BorderStroke(1.dp, BorderGray)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                text = label,
-                color = TextMuted,
-                style = MaterialTheme.typography.bodyMedium
-            )
-            Text(
-                text = "+",
-                color = TextMuted,
-                fontWeight = FontWeight.Bold
-            )
-        }
-    }
-}
-
-@Composable
-private fun CommandLibraryPanel(
-    modifier: Modifier = Modifier,
-    onAddAsciiStep: () -> Unit,
-    onAddRawStep: () -> Unit,
-    onAddPauseStep: () -> Unit
-) {
-    Card(
-        modifier = modifier,
-        shape = RoundedCornerShape(10.dp),
-        colors = CardDefaults.cardColors(containerColor = PanelWhite),
-        border = BorderStroke(1.dp, BorderGray)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            OutlinedTextField(
-                value = "",
-                onValueChange = {},
-                modifier = Modifier.fillMaxWidth(),
-                readOnly = true,
-                singleLine = true,
-                placeholder = {
-                    Text(
-                        text = "Search commands...",
-                        color = TextMuted
-                    )
-                }
-            )
-
-            Text(
-                text = "Quick Add",
-                color = TextDark,
-                fontWeight = FontWeight.Bold,
-                style = MaterialTheme.typography.headlineSmall
-            )
-
-            LibraryActionButton(
-                title = "Adapter ASCII command",
-                subtitle = "Tap to fill next empty slot",
-                onClick = onAddAsciiStep
-            )
-
-            LibraryActionButton(
-                title = "Raw packet command",
-                subtitle = "Tap to fill next empty slot",
-                onClick = onAddRawStep
-            )
-
-            LibraryActionButton(
-                title = "Pause / delay step",
-                subtitle = "Tap to fill next empty slot",
-                onClick = onAddPauseStep
-            )
-
-            Text(
-                text = "All Commands",
-                color = TextDark,
-                fontWeight = FontWeight.Bold,
-                style = MaterialTheme.typography.headlineSmall
-            )
-
-            LibraryInfoCard(
-                title = "Known command library",
-                subtitle = "Tap a command later to stage it"
-            )
-
-            LibraryInfoCard(
-                title = "Protocol-specific presets",
-                subtitle = "SSM K-Line, CAN, raw packet, ASCII"
-            )
-
-            LibraryInfoCard(
-                title = "Delay helpers",
-                subtitle = "Quiet time, inter-byte, inter-step waits"
-            )
-        }
-    }
-}
-
-@Composable
-private fun LibraryActionButton(
-    title: String,
-    subtitle: String,
-    onClick: () -> Unit
-) {
-    Button(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = SlotGray,
-            contentColor = TextDark
-        )
-    ) {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(2.dp)
-        ) {
-            Text(
-                text = title,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = subtitle,
-                color = TextMuted,
-                style = MaterialTheme.typography.bodySmall
-            )
-        }
-    }
-}
-
-@Composable
-private fun LibraryInfoCard(
-    title: String,
-    subtitle: String
-) {
-    Card(
-        shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(containerColor = PanelWhite),
-        border = BorderStroke(1.dp, BorderGray)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(2.dp)
-        ) {
-            Text(
-                text = title,
-                color = TextDark,
-                fontWeight = FontWeight.SemiBold
-            )
-            Text(
-                text = subtitle,
-                color = TextMuted,
-                style = MaterialTheme.typography.bodySmall
-            )
-        }
-    }
-}
-
-@Composable
-private fun SmallUtilityButton(
-    text: String,
-    onClick: () -> Unit
-) {
-    Button(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = InactiveGray,
-            contentColor = TextDark
-        )
-    ) {
-        Text(
-            text = text,
-            fontWeight = FontWeight.Bold
-        )
-    }
-}
-
-@Composable
-private fun DetailGridCard(
-    title: String,
-    leftEntries: List<Pair<String, String>>,
-    rightEntries: List<Pair<String, String>>
-) {
-    Card(
-        shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(containerColor = PanelWhite),
-        border = BorderStroke(1.dp, BorderGray)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            Text(
-                text = title,
-                color = TextDark,
-                fontWeight = FontWeight.Bold,
-                style = MaterialTheme.typography.titleMedium
-            )
-
-            BoxWithConstraints(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                val columnWidth = (maxWidth - 10.dp) / 2
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Column(
-                        modifier = Modifier.width(columnWidth),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        leftEntries.forEach { entry ->
-                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                Text(
-                                    text = entry.first,
-                                    color = TextMuted,
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                                Text(
-                                    text = entry.second.ifBlank { "-" },
-                                    color = TextDark,
-                                    fontWeight = FontWeight.SemiBold,
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                            }
-                        }
-                    }
-
-                    Column(
-                        modifier = Modifier.width(columnWidth),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        rightEntries.forEach { entry ->
-                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                Text(
-                                    text = entry.first,
-                                    color = TextMuted,
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                                Text(
-                                    text = entry.second.ifBlank { "-" },
-                                    color = TextDark,
-                                    fontWeight = FontWeight.SemiBold,
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun FixedLogConsoleCard(
-    title: String,
-    logText: String
-) {
-    Card(
-        shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(containerColor = PanelWhite),
-        border = BorderStroke(1.dp, BorderGray)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            Text(
-                text = title,
-                color = TextDark,
-                fontWeight = FontWeight.Bold,
-                style = MaterialTheme.typography.titleMedium
-            )
-
-            Card(
-                shape = RoundedCornerShape(8.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF101215))
-            ) {
-                SelectionContainer {
-                    Text(
-                        text = if (logText.isBlank()) "No log entries yet." else logText,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(180.dp)
-                            .verticalScroll(rememberScrollState())
-                            .padding(12.dp),
-                        color = Color(0xFFE8EAED),
-                        fontFamily = FontFamily.Monospace,
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-            }
-        }
-    }
-}
 
 private fun slotLabel(
     index: Int,
