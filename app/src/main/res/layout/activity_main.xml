@@ -11,6 +11,7 @@
         android:layout_gravity="center"
         android:minWidth="220dp"
         android:minHeight="56dp"
+        android:onClick="openSequenceLab"
         android:paddingLeft="24dp"
         android:paddingTop="14dp"
         android:paddingRight="24dp"
