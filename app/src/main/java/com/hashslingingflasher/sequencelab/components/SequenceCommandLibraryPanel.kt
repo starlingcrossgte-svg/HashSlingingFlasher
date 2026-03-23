@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.hashslingingflasher.sequencelab.ObdLinkAsciiPreset
 
 private val PanelWhite = Color(0xFFF8F8FA)
 private val SlotGray = Color(0xFFE6E8ED)
@@ -28,7 +29,8 @@ private val TextMuted = Color(0xFF6B7280)
 @Composable
 fun SequenceCommandLibraryPanel(
     modifier: Modifier = Modifier,
-    onAddAsciiStep: () -> Unit,
+    asciiPresets: List<ObdLinkAsciiPreset>,
+    onAddAsciiPreset: (ObdLinkAsciiPreset) -> Unit,
     onAddRawStep: () -> Unit,
     onAddPauseStep: () -> Unit
 ) {
@@ -59,16 +61,27 @@ fun SequenceCommandLibraryPanel(
             )
 
             Text(
-                text = "Quick Add",
+                text = "ASCII Presets",
                 color = TextDark,
                 fontWeight = FontWeight.Bold,
                 style = MaterialTheme.typography.headlineSmall
             )
 
-            SequenceLibraryActionButton(
-                title = "Adapter ASCII command",
-                subtitle = "Tap to fill next empty slot",
-                onClick = onAddAsciiStep
+            asciiPresets.forEach { preset ->
+                SequenceLibraryCommandButton(
+                    title = preset.displayName,
+                    rawCommand = preset.rawCommand,
+                    description = preset.description,
+                    expectedResponse = preset.expectedResponse,
+                    onClick = { onAddAsciiPreset(preset) }
+                )
+            }
+
+            Text(
+                text = "Quick Add",
+                color = TextDark,
+                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.headlineSmall
             )
 
             SequenceLibraryActionButton(
@@ -92,7 +105,7 @@ fun SequenceCommandLibraryPanel(
 
             SequenceLibraryInfoCard(
                 title = "Known command library",
-                subtitle = "Tap a command later to stage it"
+                subtitle = "Preset ASCII commands are now staged with their real names"
             )
 
             SequenceLibraryInfoCard(
@@ -103,6 +116,49 @@ fun SequenceCommandLibraryPanel(
             SequenceLibraryInfoCard(
                 title = "Delay helpers",
                 subtitle = "Quiet time, inter-byte, inter-step waits"
+            )
+        }
+    }
+}
+
+@Composable
+private fun SequenceLibraryCommandButton(
+    title: String,
+    rawCommand: String,
+    description: String,
+    expectedResponse: String,
+    onClick: () -> Unit
+) {
+    Button(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(8.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = SlotGray,
+            contentColor = TextDark
+        )
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            Text(
+                text = title,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = rawCommand,
+                color = TextMuted,
+                style = MaterialTheme.typography.bodySmall
+            )
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodySmall
+            )
+            Text(
+                text = "Expected: $expectedResponse",
+                color = TextMuted,
+                style = MaterialTheme.typography.bodySmall
             )
         }
     }

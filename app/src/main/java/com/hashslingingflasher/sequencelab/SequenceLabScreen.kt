@@ -26,6 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.hashslingingflasher.sequence.SequenceMode
 import com.hashslingingflasher.sequence.SequenceStep
+import com.hashslingingflasher.sequencelab.ObdLinkAsciiPreset
 import com.hashslingingflasher.sequencelab.components.SequenceCommandLibraryPanel
 import com.hashslingingflasher.sequencelab.components.FixedLogConsoleCard
 import com.hashslingingflasher.sequencelab.components.SmallUtilityButton
@@ -43,7 +44,8 @@ private val ActiveBlue = Color(0xFF2F6FE4)
 fun SequenceLabScreen(
     uiState: SequenceLabUiState,
     onAddPauseStep: () -> Unit,
-    onAddAsciiStep: () -> Unit,
+    asciiPresets: List<ObdLinkAsciiPreset>,
+    onAddAsciiPreset: (ObdLinkAsciiPreset) -> Unit,
     onAddRawStep: () -> Unit,
     onRemoveStep: (String) -> Unit,
     onDiscoverUsb: () -> Unit,
@@ -233,12 +235,13 @@ fun SequenceLabScreen(
                 }
 
                 Spacer(modifier = Modifier.width(20.dp))
-
                 SequenceCommandLibraryPanel(
                     modifier = Modifier.width(libraryWidth),
-                    onAddAsciiStep = onAddAsciiStep,
+                    asciiPresets = asciiPresets,
+                    onAddAsciiPreset = onAddAsciiPreset,
                     onAddRawStep = onAddRawStep,
                     onAddPauseStep = onAddPauseStep
+                )
                 )
             }
             }

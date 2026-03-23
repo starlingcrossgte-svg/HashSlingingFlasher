@@ -86,15 +86,16 @@ class SequenceLabActivity : ComponentActivity() {
                             )
                         )
                     },
-                    onAddAsciiStep = {
-                        viewModel.addStep(
-                            SequenceStep.AdapterAsciiStep(
-                                id = "ascii-${System.currentTimeMillis()}",
-                                title = "Adapter ASCII",
-                                command = "ATI"
-                            )
-                        )
-                    },
+                      asciiPresets = obdLinkAsciiPresets,
+                      onAddAsciiPreset = { preset ->
+                          viewModel.addStep(
+                              SequenceStep.AdapterAsciiStep(
+                                  id = "ascii-${System.currentTimeMillis()}",
+                                  title = preset.displayName,
+                                  command = preset.rawCommand
+                              )
+                          )
+                      },
                     onAddRawStep = {
                         viewModel.addStep(
                             SequenceStep.RawHexStep(
