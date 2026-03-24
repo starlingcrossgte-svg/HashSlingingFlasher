@@ -13,6 +13,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -73,7 +74,18 @@ fun SingleAsciiCommandPanel(
                 },
                 placeholder = {
                     Text("ATZ")
-                }
+                },
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = TextDark,
+                    unfocusedTextColor = TextDark,
+                    focusedLabelColor = TextMuted,
+                    unfocusedLabelColor = TextMuted,
+                    focusedPlaceholderColor = TextMuted,
+                    unfocusedPlaceholderColor = TextMuted,
+                    cursorColor = TextDark,
+                    focusedBorderColor = ActiveBlue,
+                    unfocusedBorderColor = BorderGray
+                )
             )
 
             Button(
@@ -81,6 +93,7 @@ fun SingleAsciiCommandPanel(
                     val trimmed = commandText.trim()
                     if (trimmed.isNotEmpty()) {
                         onSendCommand(trimmed)
+                        commandText = ""
                     }
                 },
                 modifier = Modifier
