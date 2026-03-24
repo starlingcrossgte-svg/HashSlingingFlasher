@@ -40,13 +40,54 @@ class ObdLinkUsbTransport : ObdLinkTransport {
     }
 
     override fun sendRawHex(hexPayload: String, timeoutMs: Long): ObdLinkCommandResult {
-        return ObdLinkCommandResult(
-            success = false,
-            responseAscii = "",
-            responseHex = "",
-            bytesSent = 0,
-            bytesReceived = 0,
-            errorMessage = "OBDLink USB raw hex passthrough not implemented yet"
+        val activeSession = session ?: return noSessionResult()
+
+        val sanitizedHex = hexPayload
+            .replace(" ", "")
+            .replace("\n", "")
+            .replace("\r", "")
+            .uppercase()
+
+        if (sanitizedHex.isEmpty()) {
+            return ObdLinkCommandResult(
+                success = false,
+                responseAscii = "",
+                responseHex = "",
+                bytesSent = 0,
+                bytesReceived = 0,
+                errorMessage = "Raw hex payload is empty"
+            )
+        }
+
+        if (sanitizedHex.length % 2 != 0) {
+            return ObdLinkCommandResult(
+                success = false,
+                responseAscii = "",
+                responseHex = "",
+                bytesSent = 0,
+                bytesReceived = 0,
+                errorMessage = "Raw hex payload must contain an even number of hex characters"
+            )
+        }
+
+        if (!sanitizedHex.all { it in '0'..'9' || it in 'A'..'F' }) {
+            return ObdLinkCommandResult(
+                success = false,
+                responseAscii = "",
+                responseHex = "",
+                bytesSent = 0,
+                bytesReceived = 0,
+                errorMessage = "Raw hex payload contains non-hex characters"
+            )
+        }
+
+        val normalizedCommand = "$sanitizedHex\r"
+
+        return exchange(
+            port = activeSession.port,
+            requestBytes = normalizedCommand.toByteArray(StandardCharsets.US_ASCII),
+            timeoutMs = timeoutMs,
+            modeLabel = "OBDLink USB RAW HEX"
         )
     }
 
@@ -129,17 +170,14 @@ class ObdLinkUsbTransport : ObdLinkTransport {
                 if (looksLikePromptComplete(output.toByteArray())) {
                     break
                 }
-            } else if (sawAnyData) {
-                break
-            }
+        }
         }
 
         return output.toByteArray()
     }
 
     private fun looksLikePromptComplete(bytes: ByteArray): Boolean {
-        val ascii = String(bytes, StandardCharsets.US_ASCII)
-        return ascii.contains(">")
+        return bytes.any { it == 0x3E.toByte() }
     }
 
     private fun noSessionResult(): ObdLinkCommandResult {

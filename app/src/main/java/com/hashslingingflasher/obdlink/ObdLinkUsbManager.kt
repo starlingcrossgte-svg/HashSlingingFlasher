@@ -26,6 +26,10 @@ class ObdLinkUsbManager(
                 UsbSerialPort.STOPBITS_1,
                 UsbSerialPort.PARITY_NONE
             )
+              try {
+                  port.purgeHwBuffers(true, true)
+              } catch (_: Exception) {
+              }
             ObdLinkUsbSession(
                 device = device,
                 connection = connection,
