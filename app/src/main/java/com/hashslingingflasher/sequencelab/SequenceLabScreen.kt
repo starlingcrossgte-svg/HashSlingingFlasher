@@ -18,6 +18,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -47,6 +48,8 @@ fun SequenceLabScreen(
     onAddRawStep: () -> Unit,
     onRemoveStep: (String) -> Unit,
     onSendSingleAsciiCommand: (String) -> Unit,
+    onUpdateCommandSlot: (Int, String) -> Unit,
+    onSendCommandSlot: (Int) -> Unit,
     onDiscoverUsb: () -> Unit,
     onRunSequence: () -> Unit,
     onStopSequence: () -> Unit,
@@ -181,44 +184,34 @@ fun SequenceLabScreen(
                             title = "Logging Console",
                             logText = logText
                         )
+                          repeat(6) { index ->
+                              Row(
+                                  modifier = Modifier.fillMaxWidth(),
+                                  horizontalArrangement = Arrangement.spacedBy(8.dp)
+                              ) {
+                                  OutlinedTextField(
+                                      value = uiState.commandSlots[index],
+                                      onValueChange = { onUpdateCommandSlot(index, it) },
+                                      modifier = Modifier.weight(1f),
+                                      singleLine = true,
+                                      label = { Text("Command ${index + 1}") },
+                                      placeholder = { Text("Type command") }
+                                  )
 
-                        Spacer(modifier = Modifier.height(6.dp))
-
-                        repeat(6) { index ->
-                            val step = stagedSteps.getOrNull(index)
-
-                            SequenceSlotButton(
-                                label = slotLabel(index, step),
-                                onClick = {
-                                    if (step != null) {
-                                        onRemoveStep(step.id)
-                                    }
-                                }
-                            )
-
-                            if (index < 5) {
-                                DelayStrip(label = "Delay / Quiet Time")
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(6.dp))
-
-                        Button(
-                            onClick = onRunSequence,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(52.dp),
-                            shape = RoundedCornerShape(8.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = ActiveBlue,
-                                contentColor = Color.White
-                            )
-                        ) {
-                            Text(
-                                text = "Run Sequence",
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
+                                  Button(
+                                      onClick = { onSendCommandSlot(index) },
+                                      modifier = Modifier.height(56.dp),
+                                      enabled = !uiState.isRunning,
+                                      shape = RoundedCornerShape(8.dp),
+                                      colors = ButtonDefaults.buttonColors(
+                                          containerColor = ActiveBlue,
+                                          contentColor = Color.White
+                                      )
+                                  ) {
+                                      Text("Send", fontWeight = FontWeight.Bold)
+                                  }
+                              }
+                          }
                 }
 
                 Spacer(modifier = Modifier.width(20.dp))

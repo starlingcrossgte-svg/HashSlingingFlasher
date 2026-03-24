@@ -110,6 +110,12 @@ class SequenceLabActivity : ComponentActivity() {
                     onSendSingleAsciiCommand = { command ->
                         viewModel.sendSingleAsciiCommand(command)
                     },
+                      onUpdateCommandSlot = { index, command ->
+                          viewModel.updateCommandSlot(index, command)
+                      },
+                      onSendCommandSlot = { index ->
+                          viewModel.sendCommandSlot(index)
+                      },
                     onDiscoverUsb = {
                         val candidate = obdLinkUsbController.findBestCandidate()
                         when {

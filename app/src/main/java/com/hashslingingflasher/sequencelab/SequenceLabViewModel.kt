@@ -43,13 +43,109 @@ class SequenceLabViewModel : ViewModel() {
         _uiState.value = _uiState.value.copy(currentSequence = updatedSequence)
     }
 
+    fun updateCommandSlot(index: Int, command: String) {
+        if (index !in 0 until _uiState.value.commandSlots.size) return
+
+        val updatedSlots = _uiState.value.commandSlots.toMutableList().apply {
+            this[index] = command
+        }
+
+        val updatedSteps = updatedSlots.mapIndexedNotNull { slotIndex, slotCommand ->
+            val trimmed = slotCommand.trim()
+            if (trimmed.isEmpty()) {
+                null
+            } else {
+                SequenceStep.AdapterAsciiStep(
+                    id = "slot-${slotIndex + 1}",
+                    title = trimmed,
+                    command = trimmed,
+                    stopOnFailure = true
+                )
+            }
+        }
+
+        val updatedSequence = _uiState.value.currentSequence.copy(steps = updatedSteps)
+
+        _uiState.value = _uiState.value.copy(
+            commandSlots = updatedSlots,
+            currentSequence = updatedSequence
+        )
+    }
+
+    fun clearCommandSlot(index: Int) {
+        updateCommandSlot(index, "")
+    }
+
+    fun sendCommandSlot(index: Int) {
+        if (_uiState.value.isRunning) return
+        if (index !in 0 until _uiState.value.commandSlots.size) return
+
+        val trimmedCommand = _uiState.value.commandSlots[index].trim()
+        if (trimmedCommand.isEmpty()) {
+            _uiState.value = _uiState.value.copy(
+                isRunning = false,
+                statusMessage = "Slot ${index + 1} is empty"
+            )
+            return
+        }
+
+        val singleStep = SequenceStep.AdapterAsciiStep(
+            id = "slot-send-${index + 1}-${System.currentTimeMillis()}",
+            title = trimmedCommand,
+            command = trimmedCommand,
+            stopOnFailure = true
+        )
+
+        val singleSequence = SequenceDefinition(
+            id = "slot-send-sequence-${index + 1}",
+            name = "Slot ${index + 1} Send",
+            steps = listOf(singleStep)
+        )
+
+        val startContext = _uiState.value.runtimeContext.copy(mode = _uiState.value.selectedMode)
+
+        _uiState.value = _uiState.value.copy(
+            isRunning = true,
+            statusMessage = "Sending slot ${index + 1}...",
+            runLog = emptyList(),
+            runtimeContext = startContext
+        )
+
+        runJob = viewModelScope.launch(Dispatchers.Default) {
+            val (endingContext, results) = runner.run(singleSequence, startContext)
+            val firstFailure = results.firstOrNull { !it.success }
+
+            _uiState.value = _uiState.value.copy(
+                runtimeContext = endingContext,
+                runLog = results,
+                isRunning = false,
+                statusMessage = when {
+                    firstFailure != null -> "Slot ${index + 1} failed"
+                    else -> "Slot ${index + 1} complete"
+                }
+            )
+        }
+    }
+
     fun addStep(step: SequenceStep) {
+        val firstEmptyIndex = _uiState.value.commandSlots.indexOfFirst { it.isBlank() }
+        if (step is SequenceStep.AdapterAsciiStep && firstEmptyIndex != -1) {
+            updateCommandSlot(firstEmptyIndex, step.command)
+            return
+        }
+
         val updatedSteps = _uiState.value.currentSequence.steps + step
         val updatedSequence = _uiState.value.currentSequence.copy(steps = updatedSteps)
         _uiState.value = _uiState.value.copy(currentSequence = updatedSequence)
     }
 
     fun removeStep(stepId: String) {
+        val slotIndex = _uiState.value.currentSequence.steps.indexOfFirst { it.id == stepId }
+        if (slotIndex in 0 until _uiState.value.commandSlots.size) {
+            clearCommandSlot(slotIndex)
+            return
+        }
+
         val updatedSteps = _uiState.value.currentSequence.steps.filterNot { it.id == stepId }
         val updatedSequence = _uiState.value.currentSequence.copy(steps = updatedSteps)
         _uiState.value = _uiState.value.copy(currentSequence = updatedSequence)
@@ -67,7 +163,20 @@ class SequenceLabViewModel : ViewModel() {
     }
 
     fun loadSequence(sequence: SequenceDefinition) {
-        _uiState.value = _uiState.value.copy(currentSequence = sequence)
+        val updatedSlots = MutableList(6) { "" }
+
+        sequence.steps.take(6).forEachIndexed { index, step ->
+            updatedSlots[index] = when (step) {
+                is SequenceStep.AdapterAsciiStep -> step.command
+                is SequenceStep.RawHexStep -> step.hexPayload
+                is SequenceStep.PauseStep -> step.title
+            }
+        }
+
+        _uiState.value = _uiState.value.copy(
+            currentSequence = sequence,
+            commandSlots = updatedSlots
+        )
     }
 
     fun sendSingleAsciiCommand(command: String) {
