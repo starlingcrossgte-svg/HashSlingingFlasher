@@ -34,7 +34,6 @@ import com.hashslingingflasher.sequencelab.components.DetailGridCard
 import com.hashslingingflasher.sequencelab.components.TransportButton
 import com.hashslingingflasher.sequencelab.components.SequenceSlotButton
 import com.hashslingingflasher.sequencelab.components.DelayStrip
-import com.hashslingingflasher.sequencelab.components.SequenceLabHeader
 import com.hashslingingflasher.sequencelab.components.SingleAsciiCommandPanel
 
 private val ScreenWhite = Color(0xFFF3F4F6)
@@ -64,14 +63,7 @@ fun SequenceLabScreen(
             .background(ScreenWhite)
             .verticalScroll(rememberScrollState())
     ) {
-        SequenceLabHeader()
 
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(1.dp)
-                .background(BorderGray)
-        )
 
         Column(
             modifier = Modifier
