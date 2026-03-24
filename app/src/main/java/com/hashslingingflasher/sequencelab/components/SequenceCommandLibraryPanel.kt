@@ -74,7 +74,7 @@ fun SequenceCommandLibraryPanel(
                     rawCommand = preset.rawCommand,
                     description = preset.description,
                     expectedResponse = preset.expectedResponse,
-                    onClick = { onAddAsciiPreset(preset) }
+                      onClick = { }
                 )
             }
 
