@@ -12,6 +12,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModelProvider
 import com.hashslingingflasher.obdlink.ObdLinkUsbController
+import com.hashslingingflasher.obdlink.ObdLinkUsbManager
 import com.hashslingingflasher.obdlink.ObdLinkUsbPermissionRegistrar
 import com.hashslingingflasher.sequence.SequenceStep
 
@@ -31,6 +32,7 @@ class SequenceLabActivity : ComponentActivity() {
             context = this,
             usbManager = usbManager
         )
+
         obdLinkPermissionRegistrar = obdLinkUsbController.createPermissionRegistrar { deviceName, granted ->
             if (!granted) {
                 viewModel.setRunning(false, "OBDLink USB permission denied")
@@ -42,18 +44,15 @@ class SequenceLabActivity : ComponentActivity() {
                 return@createPermissionRegistrar
             }
 
-            val connected = obdLinkUsbController.connectByDeviceName(deviceName)
-        if (connected) {
-            viewModel.attachObdLinkTransport(obdLinkUsbController.transport())
-        }
-            viewModel.setRunning(
-                false,
-                if (connected) {
-                    "OBDLink USB connected: $deviceName"
-                } else {
-                    "OBDLink USB connect failed: $deviceName"
+            when (val result = obdLinkUsbController.connectByDeviceName(deviceName)) {
+                is ObdLinkUsbManager.ConnectResult.Success -> {
+                    viewModel.attachObdLinkTransport(obdLinkUsbController.transport())
+                    viewModel.setRunning(false, "OBDLink USB connected: $deviceName")
                 }
-            )
+                is ObdLinkUsbManager.ConnectResult.Failure -> {
+                    viewModel.setRunning(false, "OBDLink USB connect failed: ${result.reason}")
+                }
+            }
         }
 
         setContent {
@@ -86,16 +85,16 @@ class SequenceLabActivity : ComponentActivity() {
                             )
                         )
                     },
-                      asciiPresets = obdLinkAsciiPresets,
-                      onAddAsciiPreset = { preset ->
-                          viewModel.addStep(
-                              SequenceStep.AdapterAsciiStep(
-                                  id = "ascii-${System.currentTimeMillis()}",
-                                  title = preset.displayName,
-                                  command = preset.rawCommand
-                              )
-                          )
-                      },
+                    asciiPresets = obdLinkAsciiPresets,
+                    onAddAsciiPreset = { preset ->
+                        viewModel.addStep(
+                            SequenceStep.AdapterAsciiStep(
+                                id = "ascii-${System.currentTimeMillis()}",
+                                title = preset.displayName,
+                                command = preset.rawCommand
+                            )
+                        )
+                    },
                     onAddRawStep = {
                         viewModel.addStep(
                             SequenceStep.RawHexStep(
@@ -108,36 +107,41 @@ class SequenceLabActivity : ComponentActivity() {
                     onRemoveStep = { stepId ->
                         viewModel.removeStep(stepId)
                     },
-                      onSendSingleAsciiCommand = { command ->
-                          viewModel.sendSingleAsciiCommand(command)
-                      },
-        onDiscoverUsb = {
-            val candidate = obdLinkUsbController.findBestCandidate()
-            when {
-                candidate == null -> viewModel.setRunning(false, "No non-Tactrix USB candidate found")
-                obdLinkUsbController.hasPermission(candidate.deviceName) -> {
-                    val connected = obdLinkUsbController.connectByDeviceName(candidate.deviceName)
-                    if (connected) {
-                        viewModel.attachObdLinkTransport(obdLinkUsbController.transport())
-                    }
-                    viewModel.setRunning(
-                        false,
-                        if (connected) {
-                            "OBDLink USB connected: ${candidate.deviceName}"
-                        } else {
-                            "OBDLink USB connect failed: ${candidate.deviceName}"
+                    onSendSingleAsciiCommand = { command ->
+                        viewModel.sendSingleAsciiCommand(command)
+                    },
+                    onDiscoverUsb = {
+                        val candidate = obdLinkUsbController.findBestCandidate()
+                        when {
+                            candidate == null -> {
+                                viewModel.setRunning(false, "No non-Tactrix USB candidate found")
+                            }
+                            obdLinkUsbController.hasPermission(candidate.deviceName) -> {
+                                when (val result = obdLinkUsbController.connectByDeviceName(candidate.deviceName)) {
+                                    is ObdLinkUsbManager.ConnectResult.Success -> {
+                                        viewModel.attachObdLinkTransport(obdLinkUsbController.transport())
+                                        viewModel.setRunning(
+                                            false,
+                                            "OBDLink USB connected: ${candidate.deviceName}"
+                                        )
+                                    }
+                                    is ObdLinkUsbManager.ConnectResult.Failure -> {
+                                        viewModel.setRunning(
+                                            false,
+                                            "OBDLink USB connect failed: ${result.reason}"
+                                        )
+                                    }
+                                }
+                            }
+                            else -> {
+                                obdLinkUsbController.requestPermission(candidate.deviceName)
+                                viewModel.setRunning(
+                                    false,
+                                    "Requesting OBDLink USB permission: VID=${candidate.vendorId} PID=${candidate.productId}"
+                                )
+                            }
                         }
-                    )
-                }
-                else -> {
-                    obdLinkUsbController.requestPermission(candidate.deviceName)
-                    viewModel.setRunning(
-                        false,
-                        "Requesting OBDLink USB permission: VID=${candidate.vendorId} PID=${candidate.productId}"
-                    )
-                }
-            }
-        },
+                    },
                     onRunSequence = {
                         viewModel.runSequence()
                     },

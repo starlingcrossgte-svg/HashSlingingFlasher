@@ -15,9 +15,7 @@ class ObdLinkUsbController(
 
     private var activeSession: ObdLinkUsbSession? = null
 
-    fun listAttachedDevices(): List<ObdLinkUsbDeviceInfo> {
-        return discovery.listAttachedDevices()
-    }
+    fun listAttachedDevices(): List<ObdLinkUsbDeviceInfo> = discovery.listAttachedDevices()
 
     fun findBestCandidate(): ObdLinkUsbDeviceInfo? {
         return selector.pickBestCandidate(listAttachedDevices())
@@ -28,10 +26,10 @@ class ObdLinkUsbController(
         return usbManager.hasPermission(device)
     }
 
-    fun requestPermission(deviceName: String): Boolean {
-        val device = discovery.findDeviceByName(deviceName) ?: return false
+    fun requestPermission(deviceName: String) {
+        val device = discovery.findDeviceByName(deviceName) ?: return
+        // Use a consistent Action string to prevent duplicate receiver collisions
         permissionHelper.requestPermission(device, ObdLinkUsbActions.ACTION_USB_PERMISSION)
-        return true
     }
 
     fun requestPermissionForBestCandidate(): ObdLinkUsbDeviceInfo? {
@@ -50,29 +48,41 @@ class ObdLinkUsbController(
         )
     }
 
-    fun connectByDeviceName(deviceName: String): Boolean {
-        val device = discovery.findDeviceByName(deviceName) ?: return false
-        if (!usbManager.hasPermission(device)) return false
+    /**
+     * Attempts to connect to the device and automatically attaches the session to the transport.
+     * Returns the rich ConnectResult instead of a simple Boolean.
+     */
+    fun connectByDeviceName(deviceName: String): ObdLinkUsbManager.ConnectResult {
+        val device = discovery.findDeviceByName(deviceName) 
+            ?: return ObdLinkUsbManager.ConnectResult.Failure("Device '$deviceName' not found")
 
-        val session = sessionManager.connectToDevice(device) ?: return false
-        activeSession = session
-        transport.attachSession(session)
-        return true
+        if (!usbManager.hasPermission(device)) {
+            return ObdLinkUsbManager.ConnectResult.Failure("USB Permission not granted for '$deviceName'")
+        }
+
+        // Attempt the physical connection
+        return when (val result = sessionManager.connectToDevice(device)) {
+            is ObdLinkUsbManager.ConnectResult.Success -> {
+                // Auto-sync the session to the transport layer
+                activeSession = result.session
+                transport.attachSession(result.session)
+                result
+            }
+            is ObdLinkUsbManager.ConnectResult.Failure -> {
+                // Connection failed; ensure transport is cleared
+                disconnect() 
+                result
+            }
+        }
     }
 
     fun disconnect() {
-        activeSession?.let { session ->
-            sessionManager.disconnect(session)
-        }
+        activeSession?.let { sessionManager.disconnect(it) }
         activeSession = null
         transport.clearSession()
     }
 
-    fun transport(): ObdLinkTransport {
-        return transport
-    }
+    fun transport(): ObdLinkTransport = transport
 
-    fun isConnected(): Boolean {
-        return activeSession != null && transport.hasSession()
-    }
+    fun isConnected(): Boolean = activeSession != null && transport.hasSession()
 }
