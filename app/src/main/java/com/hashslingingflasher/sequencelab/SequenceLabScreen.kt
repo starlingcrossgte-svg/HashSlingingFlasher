@@ -143,8 +143,6 @@ fun SequenceLabScreen(
                 modifier = Modifier.weight(1f)
             )
         }
-            )
-        }
 
                         DetailGridCard(
                             title = "Session Summary",
@@ -231,7 +229,6 @@ fun SequenceLabScreen(
         }
     }
 
-}
 
 
 private fun slotLabel(
