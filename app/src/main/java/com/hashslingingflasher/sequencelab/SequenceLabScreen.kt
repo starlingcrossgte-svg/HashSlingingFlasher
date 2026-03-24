@@ -229,6 +229,7 @@ fun SequenceLabScreen(
         }
     }
 
+}
 
 
 private fun slotLabel(
