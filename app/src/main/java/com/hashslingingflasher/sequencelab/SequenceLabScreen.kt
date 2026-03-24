@@ -95,25 +95,31 @@ fun SequenceLabScreen(
                         else -> "FAIL"
                     }
                     val lastDurationText = latestResult?.durationMs?.toString()?.plus(" ms") ?: "-"
-                    val logText = if (uiState.runLog.isEmpty()) {
-                        ""
-                    } else {
-                        uiState.runLog.joinToString("\n\n") { result ->
-                            buildString {
-                                append(if (result.success) "[PASS] " else "[FAIL] ")
-                                append(result.stepId)
-                                append("\nHEX: ")
-                                append(result.responseHex.ifBlank { "-" })
-                                append("\nASCII: ")
-                                append(result.responseAscii.ifBlank { "-" })
-                                append("\nERROR: ")
-                                append(result.errorMessage.ifBlank { "-" })
-                                append("\nTIME: ")
-                                append(result.durationMs)
-                                append(" ms")
-                            }
-                        }
-                    }
+                      val logText = if (uiState.runLog.isEmpty()) {
+                          ""
+                      } else {
+                          uiState.runLog.joinToString("\n\n") { result ->
+                              buildString {
+                                  append(if (result.success) "[PASS] " else "[FAIL] ")
+                                  append(result.stepId)
+                                  append("\nMODE: ")
+                                  append(result.modeLabel.ifBlank { "-" })
+                                  append("\nREQUEST ASCII: ")
+                                  append(result.requestAscii.ifBlank { "-" })
+                                  append("\nREQUEST HEX: ")
+                                  append(result.requestHex.ifBlank { "-" })
+                                  append("\nRESPONSE HEX: ")
+                                  append(result.responseHex.ifBlank { "-" })
+                                  append("\nRESPONSE ASCII: ")
+                                  append(result.responseAscii.ifBlank { "-" })
+                                  append("\nERROR: ")
+                                  append(result.errorMessage.ifBlank { "-" })
+                                  append("\nTIME: ")
+                                  append(result.durationMs)
+                                  append(" ms")
+                              }
+                          }
+                      }
 
                         SingleAsciiCommandPanel(
                             isRunning = uiState.isRunning,

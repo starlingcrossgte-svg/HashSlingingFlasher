@@ -51,10 +51,13 @@ class ObdLinkUsbTransport : ObdLinkTransport {
         if (sanitizedHex.isEmpty()) {
             return ObdLinkCommandResult(
                 success = false,
+                requestAscii = hexPayload,
+                requestHex = "",
                 responseAscii = "",
                 responseHex = "",
                 bytesSent = 0,
                 bytesReceived = 0,
+                modeLabel = "OBDLink USB RAW HEX",
                 errorMessage = "Raw hex payload is empty"
             )
         }
@@ -62,10 +65,13 @@ class ObdLinkUsbTransport : ObdLinkTransport {
         if (sanitizedHex.length % 2 != 0) {
             return ObdLinkCommandResult(
                 success = false,
+                requestAscii = sanitizedHex,
+                requestHex = "",
                 responseAscii = "",
                 responseHex = "",
                 bytesSent = 0,
                 bytesReceived = 0,
+                modeLabel = "OBDLink USB RAW HEX",
                 errorMessage = "Raw hex payload must contain an even number of hex characters"
             )
         }
@@ -73,10 +79,13 @@ class ObdLinkUsbTransport : ObdLinkTransport {
         if (!sanitizedHex.all { it in '0'..'9' || it in 'A'..'F' }) {
             return ObdLinkCommandResult(
                 success = false,
+                requestAscii = sanitizedHex,
+                requestHex = "",
                 responseAscii = "",
                 responseHex = "",
                 bytesSent = 0,
                 bytesReceived = 0,
+                modeLabel = "OBDLink USB RAW HEX",
                 errorMessage = "Raw hex payload contains non-hex characters"
             )
         }
@@ -97,6 +106,9 @@ class ObdLinkUsbTransport : ObdLinkTransport {
         timeoutMs: Long,
         modeLabel: String
     ): ObdLinkCommandResult {
+        val requestAscii = String(requestBytes, StandardCharsets.US_ASCII)
+        val requestHex = toHex(requestBytes)
+
         return try {
             val safeTimeoutMs = timeoutMs.coerceAtLeast(1L)
             val timeoutInt = safeTimeoutMs.coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
@@ -110,10 +122,13 @@ class ObdLinkUsbTransport : ObdLinkTransport {
 
             ObdLinkCommandResult(
                 success = responseBytes.isNotEmpty(),
+                requestAscii = requestAscii,
+                requestHex = requestHex,
                 responseAscii = String(responseBytes, StandardCharsets.US_ASCII),
                 responseHex = toHex(responseBytes),
                 bytesSent = requestBytes.size,
                 bytesReceived = responseBytes.size,
+                modeLabel = modeLabel,
                 errorMessage = if (responseBytes.isEmpty()) {
                     "$modeLabel write succeeded but no response bytes were received"
                 } else {
@@ -123,19 +138,25 @@ class ObdLinkUsbTransport : ObdLinkTransport {
         } catch (e: IOException) {
             ObdLinkCommandResult(
                 success = false,
+                requestAscii = requestAscii,
+                requestHex = requestHex,
                 responseAscii = "",
                 responseHex = "",
-                bytesSent = 0,
+                bytesSent = requestBytes.size,
                 bytesReceived = 0,
+                modeLabel = modeLabel,
                 errorMessage = e.message ?: "$modeLabel transport I/O error"
             )
         } catch (e: Exception) {
             ObdLinkCommandResult(
                 success = false,
+                requestAscii = requestAscii,
+                requestHex = requestHex,
                 responseAscii = "",
                 responseHex = "",
-                bytesSent = 0,
+                bytesSent = requestBytes.size,
                 bytesReceived = 0,
+                modeLabel = modeLabel,
                 errorMessage = e.message ?: "$modeLabel transport error"
             )
         }
@@ -170,7 +191,7 @@ class ObdLinkUsbTransport : ObdLinkTransport {
                 if (looksLikePromptComplete(output.toByteArray())) {
                     break
                 }
-        }
+            }
         }
 
         return output.toByteArray()
@@ -183,10 +204,13 @@ class ObdLinkUsbTransport : ObdLinkTransport {
     private fun noSessionResult(): ObdLinkCommandResult {
         return ObdLinkCommandResult(
             success = false,
+            requestAscii = "",
+            requestHex = "",
             responseAscii = "",
             responseHex = "",
             bytesSent = 0,
             bytesReceived = 0,
+            modeLabel = "",
             errorMessage = "No OBDLink USB session"
         )
     }

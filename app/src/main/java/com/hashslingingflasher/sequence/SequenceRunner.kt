@@ -43,8 +43,11 @@ class SequenceRunner {
                         StepExecutionResult(
                             stepId = step.id,
                             success = commandResult.success,
+                            requestAscii = commandResult.requestAscii,
+                            requestHex = commandResult.requestHex,
                             responseHex = commandResult.responseHex,
                             responseAscii = commandResult.responseAscii,
+                            modeLabel = commandResult.modeLabel,
                             errorMessage = commandResult.errorMessage
                         )
                     }
@@ -66,8 +69,11 @@ class SequenceRunner {
                         StepExecutionResult(
                             stepId = step.id,
                             success = commandResult.success,
+                            requestAscii = commandResult.requestAscii,
+                            requestHex = commandResult.requestHex,
                             responseHex = commandResult.responseHex,
                             responseAscii = commandResult.responseAscii,
+                            modeLabel = commandResult.modeLabel,
                             errorMessage = commandResult.errorMessage
                         )
                     }
