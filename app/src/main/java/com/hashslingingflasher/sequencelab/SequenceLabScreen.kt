@@ -24,14 +24,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.hashslingingflasher.sequence.SequenceMode
 import com.hashslingingflasher.sequence.SequenceStep
 import com.hashslingingflasher.sequencelab.ObdLinkAsciiPreset
 import com.hashslingingflasher.sequencelab.components.SequenceCommandLibraryPanel
 import com.hashslingingflasher.sequencelab.components.FixedLogConsoleCard
 import com.hashslingingflasher.sequencelab.components.SmallUtilityButton
 import com.hashslingingflasher.sequencelab.components.DetailGridCard
-import com.hashslingingflasher.sequencelab.components.TransportButton
 import com.hashslingingflasher.sequencelab.components.SequenceSlotButton
 import com.hashslingingflasher.sequencelab.components.DelayStrip
 import com.hashslingingflasher.sequencelab.components.SingleAsciiCommandPanel
@@ -71,29 +69,6 @@ fun SequenceLabScreen(
                 .padding(horizontal = 14.dp, vertical = 10.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                TransportButton(
-                    label = "SSM KLINE",
-                    selected = uiState.selectedMode == SequenceMode.SSM_KLINE
-                )
-                TransportButton(
-                    label = "SSM CAN",
-                    selected = uiState.selectedMode == SequenceMode.SSM_CAN
-                )
-                TransportButton(
-                    label = "RAW PACK.",
-                    selected = uiState.selectedMode == SequenceMode.RAW_HEX
-                )
-                TransportButton(
-                    label = "ASCII",
-                    selected = uiState.selectedMode == SequenceMode.ADAPTER_ASCII
-                )
-            }
 
             BoxWithConstraints(
                 modifier = Modifier.fillMaxWidth()
