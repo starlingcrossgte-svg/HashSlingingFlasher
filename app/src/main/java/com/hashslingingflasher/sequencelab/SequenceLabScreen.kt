@@ -35,6 +35,7 @@ import com.hashslingingflasher.sequencelab.components.TransportButton
 import com.hashslingingflasher.sequencelab.components.SequenceSlotButton
 import com.hashslingingflasher.sequencelab.components.DelayStrip
 import com.hashslingingflasher.sequencelab.components.SequenceLabHeader
+import com.hashslingingflasher.sequencelab.components.SingleAsciiCommandPanel
 
 private val ScreenWhite = Color(0xFFF3F4F6)
 private val BorderGray = Color(0xFFD4D7DE)
@@ -48,6 +49,7 @@ fun SequenceLabScreen(
     onAddAsciiPreset: (ObdLinkAsciiPreset) -> Unit,
     onAddRawStep: () -> Unit,
     onRemoveStep: (String) -> Unit,
+    onSendSingleAsciiCommand: (String) -> Unit,
     onDiscoverUsb: () -> Unit,
     onRunSequence: () -> Unit,
     onStopSequence: () -> Unit,
@@ -145,6 +147,13 @@ fun SequenceLabScreen(
                             }
                         }
                     }
+
+                      SingleAsciiCommandPanel(
+                          isRunning = uiState.isRunning,
+                          onSendCommand = onSendSingleAsciiCommand
+                      )
+
+                      Spacer(modifier = Modifier.height(6.dp))
 
                     repeat(6) { index ->
                         val step = stagedSteps.getOrNull(index)

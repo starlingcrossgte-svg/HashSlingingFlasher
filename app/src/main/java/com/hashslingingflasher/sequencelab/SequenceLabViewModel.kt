@@ -70,6 +70,56 @@ class SequenceLabViewModel : ViewModel() {
         _uiState.value = _uiState.value.copy(currentSequence = sequence)
     }
 
+    fun sendSingleAsciiCommand(command: String) {
+        if (_uiState.value.isRunning) return
+
+        val trimmedCommand = command.trim()
+        if (trimmedCommand.isEmpty()) {
+            _uiState.value = _uiState.value.copy(
+                isRunning = false,
+                statusMessage = "No single ASCII command entered"
+            )
+            return
+        }
+
+        val singleStep = SequenceStep.AdapterAsciiStep(
+            id = "single-ascii-${System.currentTimeMillis()}",
+            title = trimmedCommand,
+            command = trimmedCommand,
+            stopOnFailure = true
+        )
+
+        val singleSequence = SequenceDefinition(
+            id = "single-ascii-sequence",
+            name = "Single ASCII Command",
+            steps = listOf(singleStep)
+        )
+
+        val startContext = _uiState.value.runtimeContext.copy(mode = _uiState.value.selectedMode)
+
+        _uiState.value = _uiState.value.copy(
+            isRunning = true,
+            statusMessage = "Sending single ASCII command...",
+            runLog = emptyList(),
+            runtimeContext = startContext
+        )
+
+        runJob = viewModelScope.launch(Dispatchers.Default) {
+            val (endingContext, results) = runner.run(singleSequence, startContext)
+            val firstFailure = results.firstOrNull { !it.success }
+
+            _uiState.value = _uiState.value.copy(
+                runtimeContext = endingContext,
+                runLog = results,
+                isRunning = false,
+                statusMessage = when {
+                    firstFailure != null -> "Single command failed at ${firstFailure.stepId}"
+                    else -> "Single command complete"
+                }
+            )
+        }
+    }
+
     fun runSequence() {
         if (_uiState.value.isRunning) return
 
