@@ -115,48 +115,12 @@ fun SequenceLabScreen(
                         }
                     }
 
-                      SingleAsciiCommandPanel(
-                          isRunning = uiState.isRunning,
-                          onSendCommand = onSendSingleAsciiCommand
-                      )
-
-                      Spacer(modifier = Modifier.height(6.dp))
-
-                    repeat(6) { index ->
-                        val step = stagedSteps.getOrNull(index)
-
-                        SequenceSlotButton(
-                            label = slotLabel(index, step),
-                            onClick = {
-                                if (step != null) {
-                                    onRemoveStep(step.id)
-                                }
-                            }
+                        SingleAsciiCommandPanel(
+                            isRunning = uiState.isRunning,
+                            onSendCommand = onSendSingleAsciiCommand
                         )
 
-                        if (index < 5) {
-                            DelayStrip(label = "Delay / Quiet Time")
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(6.dp))
-
-                    Button(
-                        onClick = onRunSequence,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(52.dp),
-                        shape = RoundedCornerShape(8.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = ActiveBlue,
-                            contentColor = Color.White
-                        )
-                    ) {
-                        Text(
-                            text = "Run Sequence",
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
+                        Spacer(modifier = Modifier.height(6.dp))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -176,38 +140,76 @@ fun SequenceLabScreen(
             )
         }
 
-                    DetailGridCard(
-                        title = "Session Summary",
-                        leftEntries = listOf(
-                            "Active adapter" to "OBDLink EX / MX+",
-                            "Target ID" to targetIdText,
-                            "Session state" to uiState.statusMessage
-                        ),
-                        rightEntries = listOf(
-                            "Transport mode" to transportModeText,
-                            "Current baud" to currentBaudText,
-                            "Init status" to initStatusText
+                        DetailGridCard(
+                            title = "Session Summary",
+                            leftEntries = listOf(
+                                "Active adapter" to "OBDLink EX / MX+",
+                                "Target ID" to targetIdText,
+                                "Session state" to uiState.statusMessage
+                            ),
+                            rightEntries = listOf(
+                                "Transport mode" to transportModeText,
+                                "Current baud" to currentBaudText,
+                                "Init status" to initStatusText
+                            )
                         )
-                    )
 
-                    DetailGridCard(
-                        title = "Communication Details",
-                        leftEntries = listOf(
-                            "Last response hex" to uiState.runtimeContext.lastResponseHex.ifBlank { "-" },
-                            "Last response ascii" to uiState.runtimeContext.lastResponseAscii.ifBlank { "-" },
-                            "Last error" to uiState.runtimeContext.lastError.ifBlank { "-" }
-                        ),
-                        rightEntries = listOf(
-                            "Last step" to lastStepText,
-                            "Last result" to lastResultText,
-                            "Last duration" to lastDurationText
+                        DetailGridCard(
+                            title = "Communication Details",
+                            leftEntries = listOf(
+                                "Last response hex" to uiState.runtimeContext.lastResponseHex.ifBlank { "-" },
+                                "Last response ascii" to uiState.runtimeContext.lastResponseAscii.ifBlank { "-" },
+                                "Last error" to uiState.runtimeContext.lastError.ifBlank { "-" }
+                            ),
+                            rightEntries = listOf(
+                                "Last step" to lastStepText,
+                                "Last result" to lastResultText,
+                                "Last duration" to lastDurationText
+                            )
                         )
-                    )
 
-                    FixedLogConsoleCard(
-                        title = "Logging Console",
-                        logText = logText
-                    )
+                        FixedLogConsoleCard(
+                            title = "Logging Console",
+                            logText = logText
+                        )
+
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        repeat(6) { index ->
+                            val step = stagedSteps.getOrNull(index)
+
+                            SequenceSlotButton(
+                                label = slotLabel(index, step),
+                                onClick = {
+                                    if (step != null) {
+                                        onRemoveStep(step.id)
+                                    }
+                                }
+                            )
+
+                            if (index < 5) {
+                                DelayStrip(label = "Delay / Quiet Time")
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        Button(
+                            onClick = onRunSequence,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(52.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = ActiveBlue,
+                                contentColor = Color.White
+                            )
+                        ) {
+                            Text(
+                                text = "Run Sequence",
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                 }
 
                 Spacer(modifier = Modifier.width(20.dp))
