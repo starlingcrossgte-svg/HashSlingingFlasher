@@ -21,8 +21,8 @@ class SequenceRunner {
         var context = startingContext
         val results = mutableListOf<StepExecutionResult>()
 
-        sequence.steps.forEach { step ->
-            if (!step.enabled) return@forEach
+        for (step in sequence.steps) {
+            if (!step.enabled) continue
 
             val startedAt = System.currentTimeMillis()
 
@@ -100,6 +100,16 @@ class SequenceRunner {
                 lastResponseAscii = finalizedResult.responseAscii,
                 lastError = finalizedResult.errorMessage
             )
+
+            val shouldStop = when (step) {
+                is SequenceStep.AdapterAsciiStep -> !finalizedResult.success && step.stopOnFailure
+                is SequenceStep.RawHexStep -> !finalizedResult.success && step.stopOnFailure
+                is SequenceStep.PauseStep -> false
+            }
+
+            if (shouldStop) {
+                break
+            }
         }
 
         return context to results
