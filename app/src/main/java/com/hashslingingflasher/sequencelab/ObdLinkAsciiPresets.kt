@@ -60,7 +60,19 @@ val obdLinkAsciiPresets = listOf(
         displayName = "ATFI",
         rawCommand = "ATFI",
         description = "Force ISO 14230 fast init on the K-Line.",
-        expectedResponse = "OK / prompt"
+        expectedResponse = "BUS INIT / prompt"
+    ),
+    ObdLinkAsciiPreset(
+        displayName = "ATSI",
+        rawCommand = "ATSI",
+        description = "Force ISO 14230 slow init on the K-Line.",
+        expectedResponse = "BUS INIT / prompt"
+    ),
+    ObdLinkAsciiPreset(
+        displayName = "ATSP3",
+        rawCommand = "ATSP3",
+        description = "Set protocol 3.",
+        expectedResponse = "OK"
     ),
     ObdLinkAsciiPreset(
         displayName = "ATSP4",
@@ -81,9 +93,21 @@ val obdLinkAsciiPresets = listOf(
         expectedResponse = "OK"
     ),
     ObdLinkAsciiPreset(
+        displayName = "ATSH8012F0",
+        rawCommand = "ATSH8012F0",
+        description = "Set header / address for Subaru engine ECU path.",
+        expectedResponse = "OK"
+    ),
+    ObdLinkAsciiPreset(
         displayName = "ATSH8018F0",
         rawCommand = "ATSH8018F0",
         description = "Set header for Subaru TCU / transmission target.",
+        expectedResponse = "OK"
+    ),
+    ObdLinkAsciiPreset(
+        displayName = "STPBR4800",
+        rawCommand = "STPBR4800",
+        description = "Override protocol baud rate to 4800.",
         expectedResponse = "OK"
     ),
     ObdLinkAsciiPreset(

@@ -1,6 +1,7 @@
 package com.hashslingingflasher.sequencelab.components
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -146,11 +147,13 @@ private fun SequenceLibraryCommandButton(
                 text = title,
                 fontWeight = FontWeight.Bold
             )
-            Text(
-                text = rawCommand,
-                color = TextMuted,
-                style = MaterialTheme.typography.bodySmall
-            )
+            SelectionContainer {
+                Text(
+                    text = rawCommand,
+                    color = TextMuted,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
             Text(
                 text = description,
                 style = MaterialTheme.typography.bodySmall
