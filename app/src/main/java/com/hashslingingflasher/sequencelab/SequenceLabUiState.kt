@@ -14,5 +14,8 @@ data class SequenceLabUiState(
     val runtimeContext: SequenceContext = SequenceContext(),
     val runLog: List<StepExecutionResult> = emptyList(),
     val isRunning: Boolean = false,
-    val statusMessage: String = "Idle"
+    val statusMessage: String = "Idle",
+
+    // NEW: manual command slots (6 boxes)
+    val commandSlots: List<String> = List(6) { "" }
 )

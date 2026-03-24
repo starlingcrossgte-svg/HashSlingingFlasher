@@ -2,7 +2,6 @@ package com.hashslingingflasher.sequencelab.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -15,10 +14,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
@@ -34,70 +29,72 @@ private val TextMuted = Color(0xFF6B7280)
 @Composable
 fun SingleAsciiCommandPanel(
     modifier: Modifier = Modifier,
+    commandSlots: List<String>,
     isRunning: Boolean,
-    onSendCommand: (String) -> Unit
+    onCommandSlotChange: (Int, String) -> Unit,
+    onSendCommandSlot: (Int) -> Unit
 ) {
-    var commandText by remember { mutableStateOf("") }
-
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(44.dp),
-            shape = RoundedCornerShape(8.dp),
-            colors = CardDefaults.cardColors(containerColor = SlotGray)
-        ) {
-            Box(
+        repeat(6) { index ->
+            val commandText = commandSlots.getOrElse(index) { "" }
+
+            Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 10.dp)
+                    .height(44.dp),
+                shape = RoundedCornerShape(8.dp),
+                colors = CardDefaults.cardColors(containerColor = SlotGray)
             ) {
-                if (commandText.isBlank()) {
-                    Text(
-                        text = "Type single ASCII command",
-                        color = TextMuted
-                    )
-                }
-
                 BasicTextField(
                     value = commandText,
-                    onValueChange = { commandText = it },
-                    modifier = Modifier.fillMaxWidth(),
+                    onValueChange = { onCommandSlotChange(index, it) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
                     singleLine = true,
+                    enabled = !isRunning,
                     textStyle = TextStyle(
                         color = TextDark,
                         fontWeight = FontWeight.SemiBold
-                    )
+                    ),
+                    decorationBox = { innerTextField ->
+                        if (commandText.isBlank()) {
+                            Text(
+                                text = "Command ${index + 1}",
+                                color = TextMuted
+                            )
+                        }
+                        innerTextField()
+                    }
                 )
             }
-        }
 
-        Button(
-            onClick = {
-                val trimmed = commandText.trim()
-                if (trimmed.isNotEmpty()) {
-                    onSendCommand(trimmed)
-                    commandText = ""
-                }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(44.dp),
-            enabled = !isRunning,
-            shape = RoundedCornerShape(8.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = ActiveBlue,
-                contentColor = Color.White
-            ),
-            border = BorderStroke(1.dp, BorderGray)
-        ) {
-            Text(
-                text = "Send Command",
-                fontWeight = FontWeight.Bold
-            )
+            Button(
+                onClick = {
+                    val trimmed = commandText.trim()
+                    if (trimmed.isNotEmpty()) {
+                        onSendCommandSlot(index)
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(44.dp),
+                enabled = !isRunning && commandText.trim().isNotEmpty(),
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = ActiveBlue,
+                    contentColor = Color.White
+                ),
+                border = BorderStroke(1.dp, BorderGray)
+            ) {
+                Text(
+                    text = "Send Command ${index + 1}",
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
     }
 }
