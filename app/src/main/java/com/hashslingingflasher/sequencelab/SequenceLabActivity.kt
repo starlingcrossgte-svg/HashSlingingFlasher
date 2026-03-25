@@ -107,15 +107,18 @@ class SequenceLabActivity : ComponentActivity() {
                     onRemoveStep = { stepId ->
                         viewModel.removeStep(stepId)
                     },
-                    onSendSingleAsciiCommand = { command ->
-                        viewModel.sendSingleAsciiCommand(command)
+                    onUpdateSingleAsciiCommand = { command ->
+                        viewModel.updateSingleAsciiCommand(command)
                     },
-                      onUpdateCommandSlot = { index, command ->
-                          viewModel.updateCommandSlot(index, command)
-                      },
-                      onSendCommandSlot = { index ->
-                          viewModel.sendCommandSlot(index)
-                      },
+                    onSendSingleAsciiCommand = {
+                        viewModel.sendSingleAsciiCommand()
+                    },
+                    onUpdateCommandSlot = { index, command ->
+                        viewModel.updateCommandSlot(index, command)
+                    },
+                    onSendCommandSlot = { index ->
+                        viewModel.sendCommandSlot(index)
+                    },
                     onDiscoverUsb = {
                         val candidate = obdLinkUsbController.findBestCandidate()
                         when {
